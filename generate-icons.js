@@ -83,30 +83,29 @@ if (!fs.existsSync(assetsDir)) {
   fs.mkdirSync(assetsDir, { recursive: true });
 }
 
-// 1. App Icon (64x64) - Violet circle with microphone
-const appIcon = createPNG(64, 64, (x, y, w, h) => {
+// 1. App Icon (256x256) - Violet circle with microphone for electron-builder
+const appIcon = createPNG(256, 256, (x, y, w, h) => {
   const cx = w / 2;
   const cy = h / 2;
   const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
 
   // Circle background: #6366f1
-  if (dist < 28) {
-    // Mic shape inside
-    // Mic capsule: x in [26, 38], y in [16, 32]
-    if (x >= 27 && x <= 37 && y >= 16 && y <= 32) {
+  if (dist < 118) {
+    // Mic capsule: x in [108, 148], y in [64, 128]
+    if (x >= 108 && x <= 148 && y >= 64 && y <= 128) {
       return [255, 255, 255, 255];
     }
-    // Mic stand arc: y in [28, 38], x around arc
-    const arcDist = Math.abs(Math.sqrt((x - cx) ** 2 + (y - 30) ** 2) - 10);
-    if (arcDist <= 1.8 && y >= 26 && y <= 40) {
+    // Mic stand arc: y in [104, 160]
+    const arcDist = Math.abs(Math.sqrt((x - cx) ** 2 + (y - 120) ** 2) - 40);
+    if (arcDist <= 7 && y >= 104 && y <= 160) {
       return [255, 255, 255, 255];
     }
-    // Mic stem: x in [30, 34], y in [40, 46]
-    if (x >= 30 && x <= 34 && y >= 40 && y <= 46) {
+    // Mic stem: x in [120, 136], y in [160, 186]
+    if (x >= 120 && x <= 136 && y >= 160 && y <= 186) {
       return [255, 255, 255, 255];
     }
-    // Mic base: x in [24, 40], y in [46, 48]
-    if (x >= 24 && x <= 40 && y >= 46 && y <= 49) {
+    // Mic base: x in [96, 160], y in [186, 196]
+    if (x >= 96 && x <= 160 && y >= 186 && y <= 196) {
       return [255, 255, 255, 255];
     }
 

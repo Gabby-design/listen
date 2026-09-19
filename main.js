@@ -57,19 +57,18 @@ function setupPermissions() {
   });
 }
 
-// Create Floating Pill Overlay
+// Create Floating Fluid Orb Overlay
 function createOverlayWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth } = primaryDisplay.workAreaSize;
+  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
 
-  const overlayWidth = 280;
-  const overlayHeight = 64;
-  const x = Math.round((screenWidth - overlayWidth) / 2);
-  const y = 48; // Top-center with 48px margin
+  const orbSize = 96;
+  const x = Math.round((screenWidth - orbSize) / 2);
+  const y = screenHeight - orbSize - 28; // Bottom-center floating above taskbar/dock
 
   overlayWindow = new BrowserWindow({
-    width: overlayWidth,
-    height: overlayHeight,
+    width: orbSize,
+    height: orbSize,
     x,
     y,
     frame: false,
