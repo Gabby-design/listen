@@ -1,0 +1,25 @@
+{
+  "name": "listen-dictation",
+  "version": "1.0.0",
+  "description": "Production-ready desktop voice dictation app for Windows & macOS",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "keywords": [
+    "dictation",
+    "speech-to-text",
+    "whisper",
+    "groq",
+    "openai",
+    "electron",
+    "voice-typing"
+  ],
+  "author": "Gabby-design",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.2.0"
+  }
+}
