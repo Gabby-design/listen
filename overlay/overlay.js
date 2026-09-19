@@ -198,6 +198,8 @@ async function startRecording() {
     if (!mediaStream || !mediaStream.active) {
       mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
+          channelCount: 1, // Mono for voice clarity & optimal file size
+          sampleRate: 16000, // Native Whisper acoustic model sample rate
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true
@@ -214,7 +216,10 @@ async function startRecording() {
       else mimeType = '';
     }
 
-    const options = mimeType ? { mimeType } : undefined;
+    const options = {
+      mimeType: mimeType || undefined,
+      audioBitsPerSecond: 32000 // 32kbps mono Opus = ~14.4MB per hour, fits comfortably under 25MB limit
+    };
     mediaRecorder = new MediaRecorder(mediaStream, options);
 
     mediaRecorder.ondataavailable = (event) => {
@@ -237,7 +242,8 @@ async function startRecording() {
       if (window.overlayApi) window.overlayApi.sendError('Mic error: ' + (e.error ? e.error.message : 'Unknown'));
     };
 
-    mediaRecorder.start(100);
+    // 1000ms timeslice allows ultra-long recordings (hours) with low memory footprint
+    mediaRecorder.start(1000);
   } catch (err) {
     console.error('Error starting audio recording:', err);
     if (window.overlayApi) {

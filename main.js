@@ -281,6 +281,58 @@ function handleShortcutPressed() {
   }
 }
 
+// Intelligent formatting: Punctuation, capitalization, brackets, and verbal commands
+function formatTranscription(rawText) {
+  if (!rawText) return '';
+  let text = rawText.trim();
+
+  // 1. Spoken punctuation commands conversion
+  const spokenPunctuation = [
+    { regex: /\b(period|full stop)\b/gi, rep: '.' },
+    { regex: /\b(comma)\b/gi, rep: ',' },
+    { regex: /\b(question mark)\b/gi, rep: '?' },
+    { regex: /\b(exclamation mark|exclamation point)\b/gi, rep: '!' },
+    { regex: /\b(colon)\b/gi, rep: ':' },
+    { regex: /\b(semicolon)\b/gi, rep: ';' },
+    { regex: /\b(open bracket|open parenthesis|open paren)\b/gi, rep: '(' },
+    { regex: /\b(close bracket|close parenthesis|close paren)\b/gi, rep: ')' },
+    { regex: /\b(open quote)\b/gi, rep: '"' },
+    { regex: /\b(close quote)\b/gi, rep: '"' },
+    { regex: /\b(new line)\b/gi, rep: '\n' },
+    { regex: /\b(new paragraph)\b/gi, rep: '\n\n' }
+  ];
+
+  for (const { regex, rep } of spokenPunctuation) {
+    text = text.replace(regex, rep);
+  }
+
+  // 2. Fix spacing around punctuation marks: "hello , world" -> "hello, world"
+  text = text.replace(/\s+([,.:;?!%])/g, '$1');
+  text = text.replace(/([,.:;?!])([A-Za-z0-9])/g, '$1 $2');
+
+  // 3. Brackets & parenthesis formatting: "( text )" -> "(text)", "word(text)" -> "word (text)"
+  text = text.replace(/\(\s+/g, '(');
+  text = text.replace(/\s+\)/g, ')');
+  text = text.replace(/([A-Za-z0-9])\(/g, '$1 (');
+  text = text.replace(/\)([A-Za-z0-9])/g, ') $1');
+
+  // 4. Collapse consecutive spaces
+  text = text.replace(/[ \t]+/g, ' ');
+
+  // 5. Intelligent capitalization:
+  // First character of dictation
+  text = text.charAt(0).toUpperCase() + text.slice(1);
+  // After terminal punctuation (. ? !) followed by whitespace
+  text = text.replace(/([.?!]\s+)([a-z])/g, (_match, p1, p2) => p1 + p2.toUpperCase());
+  // After newlines
+  text = text.replace(/(\n+)([a-z])/g, (_match, p1, p2) => p1 + p2.toUpperCase());
+  // Capitalize standalone pronoun "I" and contractions
+  text = text.replace(/\b(i)\b/g, 'I');
+  text = text.replace(/\bi'([a-z]+)/gi, (_match, suffix) => "I'" + suffix.toLowerCase());
+
+  return text.trim();
+}
+
 // Send audio to Whisper API (Groq or OpenAI)
 async function transcribeAudio(buffer, mimeType) {
   const provider = config.provider || 'groq';
@@ -301,6 +353,8 @@ async function transcribeAudio(buffer, mimeType) {
   formData.append('file', blob, `dictation.${ext}`);
   formData.append('model', model);
   formData.append('response_format', 'json');
+  formData.append('temperature', '0'); // Deterministic, zero hallucination
+  formData.append('prompt', 'Hello, world! Please transcribe every spoken word accurately with proper punctuation, commas, periods, question marks, capitalization, and brackets where appropriate.');
 
   if (config.language && config.language !== 'auto') {
     formData.append('language', config.language);
@@ -358,7 +412,8 @@ function setupIpcHandlers() {
       }
 
       console.log(`Transcribing ${buffer.byteLength} bytes using ${config.provider}...`);
-      const transcribedText = await transcribeAudio(buffer, mimeType);
+      const rawText = await transcribeAudio(buffer, mimeType);
+      const transcribedText = formatTranscription(rawText);
 
       if (!transcribedText) {
         console.log('No speech detected in audio.');

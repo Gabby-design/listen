@@ -768,6 +768,41 @@
       }
     }
 
+    function formatTranscription(rawText) {
+      if (!rawText) return '';
+      let text = rawText.trim();
+      const spokenPunctuation = [
+        { regex: /\b(period|full stop)\b/gi, rep: '.' },
+        { regex: /\b(comma)\b/gi, rep: ',' },
+        { regex: /\b(question mark)\b/gi, rep: '?' },
+        { regex: /\b(exclamation mark|exclamation point)\b/gi, rep: '!' },
+        { regex: /\b(colon)\b/gi, rep: ':' },
+        { regex: /\b(semicolon)\b/gi, rep: ';' },
+        { regex: /\b(open bracket|open parenthesis|open paren)\b/gi, rep: '(' },
+        { regex: /\b(close bracket|close parenthesis|close paren)\b/gi, rep: ')' },
+        { regex: /\b(open quote)\b/gi, rep: '"' },
+        { regex: /\b(close quote)\b/gi, rep: '"' },
+        { regex: /\b(new line)\b/gi, rep: '\n' },
+        { regex: /\b(new paragraph)\b/gi, rep: '\n\n' }
+      ];
+      for (const { regex, rep } of spokenPunctuation) {
+        text = text.replace(regex, rep);
+      }
+      text = text.replace(/\s+([,.:;?!%])/g, '$1');
+      text = text.replace(/([,.:;?!])([A-Za-z0-9])/g, '$1 $2');
+      text = text.replace(/\(\s+/g, '(');
+      text = text.replace(/\s+\)/g, ')');
+      text = text.replace(/([A-Za-z0-9])\(/g, '$1 (');
+      text = text.replace(/\)([A-Za-z0-9])/g, ') $1');
+      text = text.replace(/[ \t]+/g, ' ');
+      text = text.charAt(0).toUpperCase() + text.slice(1);
+      text = text.replace(/([.?!]\s+)([a-z])/g, (_match, p1, p2) => p1 + p2.toUpperCase());
+      text = text.replace(/(\n+)([a-z])/g, (_match, p1, p2) => p1 + p2.toUpperCase());
+      text = text.replace(/\b(i)\b/g, 'I');
+      text = text.replace(/\bi'([a-z]+)/gi, (_match, suffix) => "I'" + suffix.toLowerCase());
+      return text.trim();
+    }
+
     function stopDictation() {
       isRecording = false;
       orbState = 'processing';
@@ -781,6 +816,11 @@
       if (mediaStream) {
         mediaStream.getTracks().forEach(t => t.stop());
         mediaStream = null;
+      }
+
+      // Apply intelligent formatting: punctuation, capitalization, brackets
+      if (scratchpad.value) {
+        scratchpad.value = formatTranscription(scratchpad.value);
       }
 
       setTimeout(() => {
