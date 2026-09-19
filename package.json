@@ -4,6 +4,7 @@
   "description": "Production-ready desktop voice dictation app for Windows & macOS",
   "main": "main.js",
   "scripts": {
+    "build": "echo 'Static site ready'",
     "start": "electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
