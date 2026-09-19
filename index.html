@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Listen - Desktop & Web Voice Dictation</title>
   <link rel="icon" type="image/png" href="assets/tray-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
   <style>
     :root {
       --bg-dark: #090a10;
@@ -419,19 +424,31 @@
       <p>
         Listen runs in your Windows or macOS system tray. Press a global shortcut from any application, speak into your mic, and your words are instantly pasted right into your active cursor!
       </p>
+      <div style="display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; justify-content: center;">
+        <button id="btn-install-pwa" class="btn btn-primary">
+          <span>📲 Install App (Phone / Mobile)</span>
+        </button>
+        <a href="https://github.com/Gabby-design/listen/releases/download/v1.0.0/Listen-Setup-1.0.0.exe" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
+          <span>⬇️ Download Windows App (.exe)</span>
+        </a>
+        <a href="https://github.com/Gabby-design/listen" target="_blank" class="btn btn-secondary">
+          <span>📦 View on GitHub</span>
+        </a>
+      </div>
     </section>
 
     <!-- Live In-Browser Demo -->
     <section class="demo-card">
       <div class="card-header">
         <div class="card-title">
-          <span>🎙️ Live In-Browser Test Scratchpad</span>
+          <span>🎙️ Live Dictation Scratchpad</span>
         </div>
         <div class="controls-row">
           <button id="btn-toggle-dictation" class="btn btn-primary">
             <span>🎙️ Start Dictating</span>
           </button>
           <button id="btn-copy" class="btn btn-secondary">📋 Copy Text</button>
+          <button id="btn-share" class="btn btn-secondary">📤 Send to Chat</button>
           <button id="btn-clear" class="btn btn-secondary">Clear</button>
         </div>
       </div>
@@ -460,38 +477,38 @@
       </div>
     </section>
 
-    <!-- Desktop Installation Guide -->
+    <!-- Installation Guide for Mobile & Windows -->
     <section class="install-section">
-      <h2 class="section-headline">💻 Run Desktop App on Windows / macOS</h2>
+      <h2 class="section-headline">📱 Install on Phone & 💻 Windows PC</h2>
       <div class="install-steps">
         <div class="step-card">
-          <div class="step-num">1</div>
-          <h3>Clone Repository</h3>
-          <p>Clone the source repository from GitHub to your computer:</p>
-          <div class="code-box">
-            <span>git clone https://github.com/Gabby-design/listen.git</span>
-            <button class="copy-btn" onclick="navigator.clipboard.writeText('git clone https://github.com/Gabby-design/listen.git')">Copy</button>
-          </div>
+          <div class="step-num">📱</div>
+          <h3>Install on Phone (iOS / Android)</h3>
+          <p>
+            • <strong>Android</strong>: Tap <strong>"Install App"</strong> above or browser menu (⋮) &rarr; <em>Install App</em>.<br>
+            • <strong>iPhone / iPad</strong>: Tap Safari Share icon <strong>[↑]</strong> &rarr; <strong>"Add to Home Screen"</strong>.<br>
+            Grants full microphone access. Opens as a native app with the animated fluid orb!
+          </p>
         </div>
 
         <div class="step-card">
-          <div class="step-num">2</div>
-          <h3>Install Packages</h3>
-          <p>Install the Electron dependencies:</p>
-          <div class="code-box">
-            <span>npm install</span>
-            <button class="copy-btn" onclick="navigator.clipboard.writeText('npm install')">Copy</button>
-          </div>
+          <div class="step-num">💻</div>
+          <h3>Windows Desktop Installer</h3>
+          <p>Download the official Windows Setup Wizard package:</p>
+          <a href="https://github.com/Gabby-design/listen/releases/download/v1.0.0/Listen-Setup-1.0.0.exe" class="btn btn-primary" style="font-size: 13px; padding: 8px 14px; text-decoration: none; display: inline-flex;">
+            ⬇️ Download Listen Setup 1.0.0.exe
+          </a>
+          <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
+            Shows a full installation wizard with desktop shortcut and background tray autostart.
+          </p>
         </div>
 
         <div class="step-card">
-          <div class="step-num">3</div>
-          <h3>Launch Desktop App</h3>
-          <p>Start the app in your system tray:</p>
-          <div class="code-box">
-            <span>npm start</span>
-            <button class="copy-btn" onclick="navigator.clipboard.writeText('npm start')">Copy</button>
-          </div>
+          <div class="step-num">⌨️</div>
+          <h3>Global Background Shortcut</h3>
+          <p>
+            Runs silently in your Windows System Tray in the background. Press <strong>Ctrl+Shift+Space</strong> or <strong>Ctrl+Space</strong> anywhere to dictate and auto-paste into Word, Chrome, Slack, or any app!
+          </p>
         </div>
       </div>
     </section>
@@ -795,6 +812,29 @@
       });
     }
 
+    const btnShare = document.getElementById('btn-share');
+    if (btnShare) {
+      btnShare.addEventListener('click', async () => {
+        const text = scratchpad.value.trim();
+        if (!text) {
+          alert('Speak or type some text first before sending to chat!');
+          return;
+        }
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: 'Listen Dictation',
+              text: text
+            });
+          } catch (e) {}
+        } else {
+          await navigator.clipboard.writeText(text);
+          btnShare.textContent = '✓ Copied to Paste in Chat!';
+          setTimeout(() => { btnShare.textContent = '📤 Send to Chat'; }, 2000);
+        }
+      });
+    }
+
     btnClear.addEventListener('click', () => {
       scratchpad.value = '';
       demoStatus.textContent = 'Status: Cleared';
@@ -840,6 +880,34 @@
         toggleDictation();
       }
     });
+
+    // PWA Service Worker & Install Prompt handling
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((e) => console.log('SW registration error:', e));
+    }
+
+    let deferredPrompt = null;
+    const btnInstall = document.getElementById('btn-install-pwa');
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (btnInstall) btnInstall.style.display = 'inline-flex';
+    });
+
+    if (btnInstall) {
+      btnInstall.addEventListener('click', async () => {
+        if (!deferredPrompt) {
+          alert('To install on phone or computer:\n• Android/Chrome: Tap ⋮ or Install icon in address bar.\n• iPhone/Safari: Tap Share icon and select "Add to Home Screen"!');
+          return;
+        }
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          btnInstall.style.display = 'none';
+        }
+        deferredPrompt = null;
+      });
+    }
   </script>
 </body>
 </html>

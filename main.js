@@ -17,6 +17,8 @@ const { loadConfig, saveConfig, getShortcutDisplay } = require('./config');
 const { simulatePaste } = require('./paste');
 
 app.name = 'Listen';
+app.commandLine.appendSwitch('use-fake-ui-for-media-stream');
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 try {
   app.setPath('userData', path.join(app.getPath('appData'), 'ListenDictation'));
 } catch (e) {
@@ -29,7 +31,7 @@ let tray = null;
 let overlayWindow = null;
 let settingsWindow = null;
 let appState = 'idle'; // 'idle' | 'recording' | 'processing'
-let registeredShortcut = null;
+let registeredShortcuts = [];
 
 // Enforce single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -207,25 +209,42 @@ function updateTrayMenu() {
   tray.setContextMenu(contextMenu);
 }
 
-// Register Global Shortcut
+// Register Global Shortcut with fallbacks
 function registerGlobalShortcut() {
-  if (registeredShortcut) {
-    globalShortcut.unregister(registeredShortcut);
-    registeredShortcut = null;
+  if (Array.isArray(registeredShortcuts)) {
+    for (const sc of registeredShortcuts) {
+      try {
+        globalShortcut.unregister(sc);
+      } catch (e) {}
+    }
+  }
+  registeredShortcuts = [];
+
+  const primary = config.shortcut || 'CommandOrControl+Shift+Space';
+  const listToRegister = [primary];
+
+  // Windows resilience: register fallback hotkeys so IME switching doesn't block dictation
+  if (primary.toLowerCase().includes('shift') || primary.includes('Space')) {
+    if (!listToRegister.includes('CommandOrControl+Space')) {
+      listToRegister.push('CommandOrControl+Space');
+    }
+    if (!listToRegister.includes('Alt+Space')) {
+      listToRegister.push('Alt+Space');
+    }
   }
 
-  const shortcutToRegister = config.shortcut || 'CommandOrControl+Shift+Space';
-
-  try {
-    const success = globalShortcut.register(shortcutToRegister, handleShortcutPressed);
-    if (success) {
-      registeredShortcut = shortcutToRegister;
-      console.log(`Global shortcut registered successfully: ${shortcutToRegister}`);
-    } else {
-      console.error(`Failed to register global shortcut: ${shortcutToRegister}`);
+  for (const sc of listToRegister) {
+    try {
+      const ok = globalShortcut.register(sc, handleShortcutPressed);
+      if (ok) {
+        registeredShortcuts.push(sc);
+        console.log(`Global shortcut registered: ${sc}`);
+      } else {
+        console.warn(`Could not register shortcut: ${sc}`);
+      }
+    } catch (err) {
+      console.error(`Error registering shortcut ${sc}:`, err);
     }
-  } catch (err) {
-    console.error(`Error registering shortcut ${shortcutToRegister}:`, err);
   }
 
   updateTrayMenu();
@@ -246,6 +265,8 @@ function handleShortcutPressed() {
     overlayWindow.webContents.send('start-recording');
 
     // Show without stealing focus from active window/cursor
+    overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+    overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     overlayWindow.showInactive();
     overlayWindow.moveTop();
     console.log('Overlay window shown (recording started).');
@@ -443,16 +464,13 @@ app.whenReady().then(() => {
   createTray();
   registerGlobalShortcut();
 
-  console.log(`Listen app ready! Shortcut: ${getShortcutDisplay(config.shortcut)}`);
-
-  // Open Settings window so user sees the app running
-  openSettingsWindow();
+  console.log(`Listen app ready! Shortcuts: ${registeredShortcuts.join(', ')}`);
 
   if (process.platform === 'win32' && tray) {
     try {
       tray.displayBalloon({
-        title: 'Listen Dictation Active',
-        content: `Press ${getShortcutDisplay(config.shortcut)} anywhere to start dictating!`
+        title: 'Listen is Active in Background',
+        content: `Ready! Press ${getShortcutDisplay(config.shortcut)} or Ctrl+Space anywhere to dictate.`
       });
     } catch (e) {}
   }

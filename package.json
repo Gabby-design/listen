@@ -40,12 +40,13 @@
       "category": "public.app-category.utilities"
     },
     "nsis": {
-      "oneClick": true,
+      "oneClick": false,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": false,
+      "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Listen Dictation"
+      "shortcutName": "Listen Dictation",
+      "runAfterFinish": true
     },
     "files": [
       "main.js",

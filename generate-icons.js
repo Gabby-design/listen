@@ -117,29 +117,47 @@ const appIcon = createPNG(256, 256, (x, y, w, h) => {
 
 fs.writeFileSync(path.join(assetsDir, 'icon.png'), appIcon);
 
+// PWA Icon (192x192)
+const pwa192 = createPNG(192, 192, (x, y, w, h) => {
+  const cx = w / 2, cy = h / 2;
+  const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+  if (dist < 88) {
+    if (x >= 81 && x <= 111 && y >= 48 && y <= 96) return [255, 255, 255, 255];
+    const arcDist = Math.abs(Math.sqrt((x - cx) ** 2 + (y - 90) ** 2) - 30);
+    if (arcDist <= 5 && y >= 78 && y <= 120) return [255, 255, 255, 255];
+    if (x >= 90 && x <= 102 && y >= 120 && y <= 140) return [255, 255, 255, 255];
+    if (x >= 72 && x <= 120 && y >= 140 && y <= 147) return [255, 255, 255, 255];
+    return [99, 102, 241, 255];
+  }
+  return [0, 0, 0, 0];
+});
+fs.writeFileSync(path.join(assetsDir, 'icon-192.png'), pwa192);
+
+// PWA Icon (512x512)
+const pwa512 = createPNG(512, 512, (x, y, w, h) => {
+  const cx = w / 2, cy = h / 2;
+  const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+  if (dist < 236) {
+    if (x >= 216 && x <= 296 && y >= 128 && y <= 256) return [255, 255, 255, 255];
+    const arcDist = Math.abs(Math.sqrt((x - cx) ** 2 + (y - 240) ** 2) - 80);
+    if (arcDist <= 14 && y >= 208 && y <= 320) return [255, 255, 255, 255];
+    if (x >= 240 && x <= 272 && y >= 320 && y <= 372) return [255, 255, 255, 255];
+    if (x >= 192 && x <= 320 && y >= 372 && y <= 392) return [255, 255, 255, 255];
+    return [99, 102, 241, 255];
+  }
+  return [0, 0, 0, 0];
+});
+fs.writeFileSync(path.join(assetsDir, 'icon-512.png'), pwa512);
+
 // 2. Tray Icon (32x32) - Clean white/indigo microphone
 const trayIcon = createPNG(32, 32, (x, y, w, h) => {
   const cx = w / 2;
   const cy = h / 2;
-
-  // Mic capsule: x in [13, 19], y in [6, 16]
-  if (x >= 13 && x <= 19 && y >= 6 && y <= 16) {
-    return [255, 255, 255, 255];
-  }
-  // Arc around capsule
+  if (x >= 13 && x <= 19 && y >= 6 && y <= 16) return [255, 255, 255, 255];
   const arcDist = Math.abs(Math.sqrt((x - cx) ** 2 + (y - 14) ** 2) - 6);
-  if (arcDist <= 1.2 && y >= 12 && y <= 20) {
-    return [255, 255, 255, 255];
-  }
-  // Stem: x in [15, 17], y in [20, 24]
-  if (x >= 15 && x <= 17 && y >= 20 && y <= 24) {
-    return [255, 255, 255, 255];
-  }
-  // Base: x in [11, 21], y in [24, 26]
-  if (x >= 11 && x <= 21 && y >= 24 && y <= 26) {
-    return [255, 255, 255, 255];
-  }
-
+  if (arcDist <= 1.2 && y >= 12 && y <= 20) return [255, 255, 255, 255];
+  if (x >= 15 && x <= 17 && y >= 20 && y <= 24) return [255, 255, 255, 255];
+  if (x >= 11 && x <= 21 && y >= 24 && y <= 26) return [255, 255, 255, 255];
   return [0, 0, 0, 0];
 });
 
