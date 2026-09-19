@@ -23,10 +23,17 @@ function getConfigPath() {
 }
 
 function loadConfig() {
-  const configPath = getConfigPath();
+  const userConfigPath = getConfigPath();
+  const localConfigPath = path.join(process.cwd(), 'config.json');
+
+  let chosenPath = userConfigPath;
+  if (!fs.existsSync(userConfigPath) && fs.existsSync(localConfigPath)) {
+    chosenPath = localConfigPath;
+  }
+
   try {
-    if (fs.existsSync(configPath)) {
-      const raw = fs.readFileSync(configPath, 'utf8');
+    if (fs.existsSync(chosenPath)) {
+      const raw = fs.readFileSync(chosenPath, 'utf8');
       const parsed = JSON.parse(raw);
       return { ...DEFAULT_CONFIG, ...parsed };
     }
@@ -34,7 +41,6 @@ function loadConfig() {
     console.error('Error loading config, using defaults:', err);
   }
 
-  // If file doesn't exist, create it with default config
   saveConfig(DEFAULT_CONFIG);
   return { ...DEFAULT_CONFIG };
 }

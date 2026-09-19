@@ -16,6 +16,13 @@ const fs = require('fs');
 const { loadConfig, saveConfig, getShortcutDisplay } = require('./config');
 const { simulatePaste } = require('./paste');
 
+app.name = 'Listen';
+try {
+  app.setPath('userData', path.join(app.getPath('appData'), 'ListenDictation'));
+} catch (e) {
+  // Ignore if called before app ready
+}
+
 // State tracking
 let config = loadConfig();
 let tray = null;
@@ -415,9 +422,18 @@ app.whenReady().then(() => {
   createTray();
   registerGlobalShortcut();
 
-  // If no API key is configured, automatically open Settings window on initial launch
-  if (!config.apiKey || !config.apiKey.trim()) {
-    openSettingsWindow();
+  console.log(`Listen app ready! Shortcut: ${getShortcutDisplay(config.shortcut)}`);
+
+  // Open Settings window so user sees the app running
+  openSettingsWindow();
+
+  if (process.platform === 'win32' && tray) {
+    try {
+      tray.displayBalloon({
+        title: 'Listen Dictation Active',
+        content: `Press ${getShortcutDisplay(config.shortcut)} anywhere to start dictating!`
+      });
+    } catch (e) {}
   }
 
   app.on('activate', () => {
