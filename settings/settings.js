@@ -15,6 +15,7 @@ const shortcutBox = document.getElementById('shortcut-recorder-box');
 const shortcutBadges = document.getElementById('shortcut-badges');
 const recorderHint = document.getElementById('recorder-hint');
 const btnResetShortcut = document.getElementById('btn-reset-shortcut');
+const btnTestPill = document.getElementById('btn-test-pill');
 const pasteDelayInput = document.getElementById('paste-delay-input');
 
 const btnSave = document.getElementById('btn-save');
@@ -247,6 +248,12 @@ function setupEvents() {
     recordedShortcut = 'CommandOrControl+Shift+Space';
     renderShortcutBadges(recordedShortcut);
   });
+
+  if (btnTestPill) {
+    btnTestPill.addEventListener('click', () => {
+      window.settingsApi.triggerDictation();
+    });
+  }
 
   // Save Config
   btnSave.addEventListener('click', async () => {

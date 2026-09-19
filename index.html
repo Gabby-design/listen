@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listen - Desktop & Web Voice Dictation</title>
+  <link rel="icon" type="image/png" href="assets/tray-icon.png">
+  <style>
+    :root {
+      --bg-dark: #090a10;
+      --bg-card: #121524;
+      --bg-card-hover: #191d33;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.35);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.1);
+      --success: #10b981;
+      --error: #ef4444;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px 60px;
+      overflow-x: hidden;
+      background-image: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, rgba(9, 10, 16, 0) 70%);
+    }
+
+    /* Fixed Floating Pill Demo at the top of the viewport */
+    .pill-wrapper {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .pill {
+      pointer-events: auto;
+      width: 250px;
+      height: 48px;
+      background: rgba(18, 20, 29, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 20px var(--accent-glow);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+
+    .pill:hover {
+      transform: scale(1.02);
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+
+    .pill-icon-box {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .mic-svg {
+      width: 18px;
+      height: 18px;
+      color: #818cf8;
+      filter: drop-shadow(0 0 6px rgba(129, 140, 248, 0.7));
+      transition: all 0.2s;
+    }
+
+    .pill.listening .mic-svg {
+      animation: pulse-mic 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse-mic {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); color: #a5b4fc; }
+    }
+
+    .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #60a5fa;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .pill.processing .mic-svg { display: none; }
+    .pill.processing .spinner { display: block; }
+    .pill.processing .waveform { display: none; }
+
+    .waveform {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .waveform .bar {
+      width: 3px;
+      height: 4px;
+      min-height: 4px;
+      background: linear-gradient(180deg, #a5b4fc 0%, #6366f1 100%);
+      border-radius: 2px;
+      transition: height 0.08s ease;
+    }
+
+    .pill-text {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: #e2e8f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 860px;
+      width: 100%;
+      margin-top: 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* Hero Header */
+    .hero {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .hero-badge {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hero h1 {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.15;
+    }
+
+    .hero p {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 580px;
+      line-height: 1.6;
+    }
+
+    /* Interactive Live Demo Area */
+    .demo-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .controls-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    }
+
+    .btn-primary.recording {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Shortcut Recorder Widget */
+    .shortcut-widget {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .shortcut-widget:hover, .shortcut-widget.focus {
+      border-color: var(--accent);
+    }
+
+    .shortcut-keys {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .kbd {
+      background: #1e2235;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-bottom: 2px solid rgba(0, 0, 0, 0.5);
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .scratchpad {
+      width: 100%;
+      height: 140px;
+      background: #0d0f17;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      color: #f1f5f9;
+      font-size: 15px;
+      line-height: 1.6;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .scratchpad:focus {
+      border-color: var(--accent);
+    }
+
+    /* Desktop Installation Section */
+    .install-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .section-headline {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .install-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-card h3 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .step-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .code-box {
+      background: #090a10;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12.5px;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      overflow-x: auto;
+    }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 2px 4px;
+      font-size: 12px;
+    }
+
+    .copy-btn:hover {
+      color: var(--text-main);
+    }
+
+    /* Feature Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .feature-item {
+      background: rgba(18, 21, 36, 0.6);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      gap: 14px;
+    }
+
+    .feature-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .feature-item h4 {
+      font-size: 14.5px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .feature-item p {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: #818cf8;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Pill Demo Indicator -->
+  <div class="pill-wrapper">
+    <div id="live-pill" class="pill idle" title="Click to start/stop dictation">
+      <div class="pill-icon-box">
+        <svg class="mic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="22"></line>
+        </svg>
+        <div class="spinner"></div>
+      </div>
+      <div class="waveform" id="demo-waveform">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </div>
+      <span class="pill-text" id="demo-pill-text">Press Shortcut or Click to Dictate</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-badge">⚡ Production-Ready Dictation</div>
+      <h1>Speak Naturally.<br>Transcribe & Auto-Paste Anywhere.</h1>
+      <p>
+        Listen runs in your Windows or macOS system tray. Press a global shortcut from any application, speak into your mic, and your words are instantly pasted right into your active cursor!
+      </p>
+    </section>
+
+    <!-- Live In-Browser Demo -->
+    <section class="demo-card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>🎙️ Live In-Browser Test Scratchpad</span>
+        </div>
+        <div class="controls-row">
+          <button id="btn-toggle-dictation" class="btn btn-primary">
+            <span>🎙️ Start Dictating</span>
+          </button>
+          <button id="btn-clear" class="btn btn-secondary">Clear Text</button>
+        </div>
+      </div>
+
+      <!-- Shortcut Customizer / Trigger in Browser -->
+      <div class="shortcut-widget" id="shortcut-widget" tabindex="0" title="Click to test or change shortcut keys">
+        <div>
+          <span style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Active Shortcut (Press these keys to toggle dictation):</span>
+          <div class="shortcut-keys" id="shortcut-display">
+            <kbd class="kbd">Ctrl</kbd>
+            <span style="color: var(--text-muted)">+</span>
+            <kbd class="kbd">Shift</kbd>
+            <span style="color: var(--text-muted)">+</span>
+            <kbd class="kbd">Space</kbd>
+          </div>
+        </div>
+        <span style="font-size: 12px; color: #818cf8;">Click to change keys</span>
+      </div>
+
+      <!-- Scratchpad where text pastes -->
+      <textarea id="scratchpad" class="scratchpad" placeholder="Your spoken words will appear here automatically when you speak into your microphone..."></textarea>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted);">
+        <span>STT Provider: <strong>Groq Whisper (whisper-large-v3-turbo)</strong></span>
+        <span id="demo-status">Status: Ready</span>
+      </div>
+    </section>
+
+    <!-- Desktop Installation Guide -->
+    <section class="install-section">
+      <h2 class="section-headline">💻 Run Desktop App on Windows / macOS</h2>
+      <div class="install-steps">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3>Clone Repository</h3>
+          <p>Clone the source repository from GitHub to your computer:</p>
+          <div class="code-box">
+            <span>git clone https://github.com/Gabby-design/listen.git</span>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('git clone https://github.com/Gabby-design/listen.git')">Copy</button>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3>Install Packages</h3>
+          <p>Install the Electron dependencies:</p>
+          <div class="code-box">
+            <span>npm install</span>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('npm install')">Copy</button>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3>Launch Desktop App</h3>
+          <p>Start the app in your system tray:</p>
+          <div class="code-box">
+            <span>npm start</span>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('npm start')">Copy</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Overview -->
+    <section class="features-grid">
+      <div class="feature-item">
+        <div class="feature-icon">✨</div>
+        <div>
+          <h4>Zero Focus Stealing</h4>
+          <p>Frameless, non-focusable floating pill indicator stays on top without stealing your active cursor or window focus.</p>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">⚡</div>
+        <div>
+          <h4>~300ms Groq Whisper</h4>
+          <p>Ultra-low-latency transcription powered by Groq's LPUs delivering spoken text in milliseconds.</p>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">📋</div>
+        <div>
+          <h4>Automated Paste Injection</h4>
+          <p>Native keystroke automation pastes transcribed text straight into Notepad, VSCode, Chrome, Word, or Slack.</p>
+        </div>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon">🎛️</div>
+        <div>
+          <h4>Custom Hotkey Recorder</h4>
+          <p>Rebind your global shortcut to any combination (Ctrl+Shift+Space, Alt+D, etc.) with real-time capture.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>Listen Desktop Dictation &copy; 2026. Open source on <a href="https://github.com/Gabby-design/listen" target="_blank">GitHub</a>.</p>
+    </footer>
+  </div>
+
+  <script>
+    // Live Browser Dictation Engine
+    const pill = document.getElementById('live-pill');
+    const pillText = document.getElementById('demo-pill-text');
+    const btnToggle = document.getElementById('btn-toggle-dictation');
+    const btnClear = document.getElementById('btn-clear');
+    const scratchpad = document.getElementById('scratchpad');
+    const demoStatus = document.getElementById('demo-status');
+    const waveformBars = document.querySelectorAll('#demo-waveform .bar');
+    const shortcutWidget = document.getElementById('shortcut-widget');
+    const shortcutDisplay = document.getElementById('shortcut-display');
+
+    let isRecording = false;
+    let recognition = null;
+    let mediaStream = null;
+    let audioContext = null;
+    let analyser = null;
+    let animId = null;
+
+    // Web Speech API initialization (works immediately in Chrome, Edge, Safari)
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    function initVisualizer(stream) {
+      try {
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+        const source = audioContext.createMediaStreamSource(stream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 32;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        function loop() {
+          if (!isRecording) return;
+          analyser.getByteFrequencyData(dataArray);
+          const sampleIndices = [1, 3, 5, 7, 9];
+          waveformBars.forEach((bar, i) => {
+            const val = dataArray[sampleIndices[i]] || 0;
+            const h = Math.max(4, Math.min(18, (val / 255) * 18));
+            bar.style.height = h + 'px';
+          });
+          animId = requestAnimationFrame(loop);
+        }
+        loop();
+      } catch (e) {
+        console.warn('Audio visualizer error:', e);
+      }
+    }
+
+    function stopVisualizer() {
+      if (animId) cancelAnimationFrame(animId);
+      waveformBars.forEach(b => b.style.height = '4px');
+    }
+
+    async function startDictation() {
+      try {
+        isRecording = true;
+        pill.className = 'pill listening';
+        pillText.textContent = 'Listening... Speak now';
+        btnToggle.className = 'btn btn-primary recording';
+        btnToggle.innerHTML = '<span>⏹️ Stop Dictation</span>';
+        demoStatus.textContent = 'Status: Listening...';
+
+        // Request microphone for real-time waveform
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          initVisualizer(mediaStream);
+        }
+
+        // Use Web Speech API in browser
+        if (SpeechRecognition) {
+          recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+
+          recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              transcript += event.results[i][0].transcript;
+            }
+            if (transcript.trim()) {
+              scratchpad.value += (scratchpad.value ? ' ' : '') + transcript.trim();
+              scratchpad.scrollTop = scratchpad.scrollHeight;
+            }
+          };
+
+          recognition.onerror = (e) => {
+            console.error('Speech error:', e);
+          };
+
+          recognition.start();
+        } else {
+          pillText.textContent = 'SpeechRecognition not supported in this browser';
+        }
+      } catch (err) {
+        console.error('Mic error:', err);
+        stopDictation();
+        alert('Microphone permission is required to test dictation.');
+      }
+    }
+
+    function stopDictation() {
+      isRecording = false;
+      stopVisualizer();
+      pill.className = 'pill processing';
+      pillText.textContent = 'Transcribing...';
+      demoStatus.textContent = 'Status: Transcribing...';
+
+      if (recognition) {
+        try { recognition.stop(); } catch (e) {}
+      }
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+      }
+
+      setTimeout(() => {
+        pill.className = 'pill idle';
+        pillText.textContent = 'Press Shortcut or Click to Dictate';
+        btnToggle.className = 'btn btn-primary';
+        btnToggle.innerHTML = '<span>🎙️ Start Dictating</span>';
+        demoStatus.textContent = 'Status: Ready';
+      }, 500);
+    }
+
+    function toggleDictation() {
+      if (!isRecording) {
+        startDictation();
+      } else {
+        stopDictation();
+      }
+    }
+
+    btnToggle.addEventListener('click', toggleDictation);
+    pill.addEventListener('click', toggleDictation);
+
+    btnClear.addEventListener('click', () => {
+      scratchpad.value = '';
+    });
+
+    // Custom in-browser shortcut handling
+    let customKey = 'Space';
+    let requireCtrl = true;
+    let requireShift = true;
+    let isConfiguring = false;
+
+    shortcutWidget.addEventListener('click', () => {
+      isConfiguring = true;
+      shortcutWidget.classList.add('focus');
+      shortcutDisplay.innerHTML = '<span style="color:#818cf8; font-weight:600;">Press your shortcut keys now...</span>';
+    });
+
+    window.addEventListener('keydown', (e) => {
+      // If configuring
+      if (isConfiguring) {
+        e.preventDefault();
+        if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
+
+        requireCtrl = e.ctrlKey || e.metaKey;
+        requireShift = e.shiftKey;
+        customKey = e.code === 'Space' ? 'Space' : e.key.toUpperCase();
+
+        isConfiguring = false;
+        shortcutWidget.classList.remove('focus');
+
+        // Render keys
+        let html = '';
+        if (requireCtrl) html += '<kbd class="kbd">Ctrl</kbd><span style="color:var(--text-muted)">+</span>';
+        if (requireShift) html += '<kbd class="kbd">Shift</kbd><span style="color:var(--text-muted)">+</span>';
+        html += `<kbd class="kbd">${customKey}</kbd>`;
+        shortcutDisplay.innerHTML = html;
+        return;
+      }
+
+      // Check if shortcut matches
+      const ctrlMatch = requireCtrl ? (e.ctrlKey || e.metaKey) : true;
+      const shiftMatch = requireShift ? e.shiftKey : true;
+      const keyMatch = customKey === 'Space' ? (e.code === 'Space') : (e.key.toUpperCase() === customKey);
+
+      if (ctrlMatch && shiftMatch && keyMatch) {
+        // Prevent default browser hotkey behavior
+        e.preventDefault();
+        toggleDictation();
+      }
+    });
+  </script>
+</body>
+</html>

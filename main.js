@@ -89,8 +89,16 @@ function createOverlayWindow() {
     }
   });
 
-  overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  if (process.platform === 'darwin') {
+    overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  } else {
+    overlayWindow.setAlwaysOnTop(true, 'floating');
+  }
   overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+
+  overlayWindow.webContents.on('console-message', (_e, _level, message) => {
+    console.log(`[Overlay Window]: ${message}`);
+  });
 
   overlayWindow.loadFile(path.join(__dirname, 'overlay', 'overlay.html'));
 
@@ -171,7 +179,12 @@ function updateTrayMenu() {
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Settings',
+      label: appState === 'recording' ? '⏹️ Stop Dictation' : '🎙️ Start Dictation',
+      click: () => handleShortcutPressed()
+    },
+    { type: 'separator' },
+    {
+      label: 'Open Settings',
       click: () => openSettingsWindow()
     },
     {
@@ -221,25 +234,29 @@ function registerGlobalShortcut() {
 
 // Shortcut Toggle Handler
 function handleShortcutPressed() {
+  console.log(`handleShortcutPressed called. Current state: ${appState}`);
   if (!overlayWindow || overlayWindow.isDestroyed()) {
     createOverlayWindow();
-    return;
   }
 
   if (appState === 'idle') {
     // Start Recording
     appState = 'recording';
+    updateTrayMenu();
     overlayWindow.webContents.send('reset-state');
     overlayWindow.webContents.send('start-recording');
 
     // Show without stealing focus from active window/cursor
     overlayWindow.showInactive();
+    overlayWindow.moveTop();
+    console.log('Overlay window shown (recording started).');
   } else if (appState === 'recording') {
     // Stop Recording & Begin Processing
     appState = 'processing';
+    updateTrayMenu();
     overlayWindow.webContents.send('stop-recording');
+    console.log('Recording stopped, transcribing...');
   } else if (appState === 'processing') {
-    // Already transcribing, ignore extra press
     console.log('Currently transcribing audio, please wait...');
   }
 }
@@ -364,6 +381,11 @@ function setupIpcHandlers() {
   ipcMain.on('recording-error', (_event, message) => {
     console.error('Microphone recording error:', message);
     handleOverlayError(message || 'Mic Error');
+  });
+
+  // Manually trigger dictation toggle from Settings UI
+  ipcMain.on('trigger-dictation', () => {
+    handleShortcutPressed();
   });
 
   // Settings: Get Config
