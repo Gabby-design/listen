@@ -692,9 +692,9 @@
             for (let i = 0; i < event.results.length; ++i) {
               const res = event.results[i];
               if (res.isFinal) {
-                finalTranscript += res[0].transcript + ' ';
+                finalTranscript += res[0].transcript.trim() + ' ';
               } else {
-                interimTranscript += res[0].transcript;
+                interimTranscript += res[0].transcript.trim() + ' ';
               }
             }
 
