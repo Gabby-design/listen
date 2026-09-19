@@ -498,7 +498,8 @@
           <button id="btn-toggle-dictation" class="btn btn-primary">
             <span>🎙️ Start Dictating</span>
           </button>
-          <button id="btn-clear" class="btn btn-secondary">Clear Text</button>
+          <button id="btn-copy" class="btn btn-secondary">📋 Copy Text</button>
+          <button id="btn-clear" class="btn btn-secondary">Clear</button>
         </div>
       </div>
 
@@ -675,31 +676,51 @@
           initVisualizer(mediaStream);
         }
 
-        // Use Web Speech API in browser
+        // Handle clean speech recognition without duplication
         if (SpeechRecognition) {
           recognition = new SpeechRecognition();
           recognition.continuous = true;
           recognition.interimResults = true;
           recognition.lang = 'en-US';
 
+          const baseText = scratchpad.value;
+
           recognition.onresult = (event) => {
-            let transcript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-              transcript += event.results[i][0].transcript;
+            let finalTranscript = '';
+            let interimTranscript = '';
+
+            for (let i = 0; i < event.results.length; ++i) {
+              const res = event.results[i];
+              if (res.isFinal) {
+                finalTranscript += res[0].transcript + ' ';
+              } else {
+                interimTranscript += res[0].transcript;
+              }
             }
-            if (transcript.trim()) {
-              scratchpad.value += (scratchpad.value ? ' ' : '') + transcript.trim();
+
+            const currentSpeech = (finalTranscript + interimTranscript).trim();
+            if (currentSpeech) {
+              scratchpad.value = (baseText ? baseText.trim() + ' ' : '') + currentSpeech;
               scratchpad.scrollTop = scratchpad.scrollHeight;
             }
           };
 
           recognition.onerror = (e) => {
-            console.error('Speech error:', e);
+            console.warn('Speech recognition warning:', e.error);
+            if (e.error === 'not-allowed') {
+              demoStatus.textContent = 'Status: Microphone permission denied';
+            }
+          };
+
+          recognition.onend = () => {
+            if (isRecording) {
+              try { recognition.start(); } catch (e) {}
+            }
           };
 
           recognition.start();
         } else {
-          pillText.textContent = 'SpeechRecognition not supported in this browser';
+          pillText.textContent = 'Speech recognition not supported in this browser';
         }
       } catch (err) {
         console.error('Mic error:', err);
@@ -713,7 +734,7 @@
       stopVisualizer();
       pill.className = 'pill processing';
       pillText.textContent = 'Transcribing...';
-      demoStatus.textContent = 'Status: Transcribing...';
+      demoStatus.textContent = 'Status: Finalizing text...';
 
       if (recognition) {
         try { recognition.stop(); } catch (e) {}
@@ -729,7 +750,7 @@
         btnToggle.className = 'btn btn-primary';
         btnToggle.innerHTML = '<span>🎙️ Start Dictating</span>';
         demoStatus.textContent = 'Status: Ready';
-      }, 500);
+      }, 400);
     }
 
     function toggleDictation() {
@@ -743,8 +764,21 @@
     btnToggle.addEventListener('click', toggleDictation);
     pill.addEventListener('click', toggleDictation);
 
+    const btnCopy = document.getElementById('btn-copy');
+    if (btnCopy) {
+      btnCopy.addEventListener('click', async () => {
+        if (!scratchpad.value.trim()) return;
+        await navigator.clipboard.writeText(scratchpad.value);
+        const origText = btnCopy.textContent;
+        btnCopy.textContent = '✓ Copied!';
+        setTimeout(() => { btnCopy.textContent = origText; }, 1800);
+      });
+    }
+
     btnClear.addEventListener('click', () => {
       scratchpad.value = '';
+      demoStatus.textContent = 'Status: Cleared';
+      setTimeout(() => { demoStatus.textContent = 'Status: Ready'; }, 1000);
     });
 
     // Custom in-browser shortcut handling
