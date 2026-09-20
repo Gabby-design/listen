@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('settingsApi', {
   triggerDictation: () => ipcRenderer.send('trigger-dictation'),
   closeSettings: () => ipcRenderer.send('close-settings'),
   completeFirstLaunch: (customShortcut) => ipcRenderer.invoke('complete-first-launch', customShortcut),
+  getHistory: () => ipcRenderer.invoke('get-history'),
+  clearHistory: () => ipcRenderer.invoke('clear-history'),
   onActivateShortcutRecorder: (callback) => {
     ipcRenderer.on('activate-shortcut-recorder', () => callback());
   },

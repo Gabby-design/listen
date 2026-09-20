@@ -183,16 +183,75 @@ function render() {
   animFrameId = requestAnimationFrame(render);
 }
 
+// Synthesized Audio Cues (Zero-latency Web Audio API)
+let soundFeedbackEnabled = true;
+
+function playAudioChime(type) {
+  if (!soundFeedbackEnabled) return;
+  try {
+    const ctx = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+
+    if (type === 'start') {
+      // Gentle rising harmonic chime
+      osc.frequency.setValueAtTime(480, now);
+      osc.frequency.exponentialRampToValueAtTime(840, now + 0.07);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.07, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.09);
+    } else if (type === 'stop') {
+      // Gentle descending confirmation tone
+      osc.frequency.setValueAtTime(720, now);
+      osc.frequency.exponentialRampToValueAtTime(360, now + 0.06);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.06, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } else if (type === 'error') {
+      // Soft low error warning
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.setValueAtTime(220, now + 0.08);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.06, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.14);
+    }
+  } catch (err) {
+    // Gracefully ignore audio synthesis errors
+  }
+}
+
 // State transitions
 function setState(state) {
   currentState = state;
   container.className = `orb-container ${state}`;
+  if (state === 'error') {
+    playAudioChime('error');
+  }
 }
 
 // Audio Recording Pipeline
 async function startRecording() {
   try {
     recordedChunks = [];
+    playAudioChime('start');
     setState('listening');
 
     if (!mediaStream || !mediaStream.active) {
@@ -252,6 +311,7 @@ async function startRecording() {
 }
 
 function stopRecording() {
+  playAudioChime('stop');
   setState('processing');
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
@@ -276,8 +336,15 @@ if (window.overlayApi) {
     setState('listening');
   });
 
+  if (window.overlayApi.onSetSoundFeedback) {
+    window.overlayApi.onSetSoundFeedback((enabled) => {
+      soundFeedbackEnabled = !!enabled;
+    });
+  }
+
   window.overlayApi.ready();
 }
 
 // Start rendering loop immediately
 render();
+

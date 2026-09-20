@@ -1,6 +1,6 @@
 {
   "name": "listen-dictation",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Production-ready desktop voice dictation app for Windows & macOS",
   "main": "main.js",
   "scripts": {
@@ -52,12 +52,16 @@
       "main.js",
       "config.js",
       "config.json",
+      "history.js",
       "paste.js",
       "preload-overlay.js",
       "preload-settings.js",
       "assets/**/*",
       "overlay/**/*",
       "settings/**/*"
+    ],
+    "asarUnpack": [
+      "assets/bin/**/*"
     ]
   },
   "keywords": [

@@ -20,71 +20,235 @@
         </div>
         <div>
           <h1>Listen Dictation</h1>
-          <p class="subtitle">Global voice-to-text with auto-paste</p>
+          <p class="subtitle">v2.1.2 • AI Voice-to-Text & Instant Injection</p>
         </div>
       </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="settings-tabs" role="tablist">
+        <button type="button" class="tab-btn active" data-tab="tab-shortcuts" role="tab" aria-selected="true">
+          <span class="tab-icon">🎙️</span> Shortcuts & Mode
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-intelligence" role="tab" aria-selected="false">
+          <span class="tab-icon">🧠</span> AI & Vocabulary
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-paste" role="tab" aria-selected="false">
+          <span class="tab-icon">⚡</span> Paste & Audio
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-history" id="tab-btn-history" role="tab" aria-selected="false">
+          <span class="tab-icon">📋</span> History
+        </button>
+      </nav>
     </header>
 
-    <!-- Main Form -->
+    <!-- Main Content Panels -->
     <main class="settings-body">
-      <!-- First-Launch Welcome & Shortcut Setup Banner -->
+      <!-- First-Launch Welcome Banner -->
       <div id="first-launch-banner" class="first-launch-banner" style="display: none;">
-        <div class="banner-badge">🚀 Setup & Onboarding</div>
-        <h2>Choose Your Global Shortcut</h2>
-        <p>Before you begin, choose the shortcut key combination you want to press to start and stop dictation from any application on your machine.</p>
+        <div class="banner-badge">🚀 Welcome to Listen</div>
+        <h2>Configure Your Global Shortcut</h2>
+        <p>Choose the key combination you will press to trigger voice dictation from any application on your PC.</p>
       </div>
 
-      <!-- Section 1: Global Shortcut (Prominent for easy setup) -->
-      <div class="form-section" id="section-shortcut">
-        <label class="section-title">Global Dictation Shortcut</label>
-        <p class="section-desc">Press this combination from any application to start/stop dictation.</p>
-        
-        <div class="shortcut-recorder" id="shortcut-recorder-box" tabindex="0">
-          <div class="shortcut-keys" id="shortcut-badges">
-            <!-- Badges rendered by JS -->
+      <!-- TAB 1: Shortcuts & Mode -->
+      <div class="tab-panel active" id="tab-shortcuts" role="tabpanel">
+        <!-- Dictation Mode Selection -->
+        <div class="form-section">
+          <label class="section-title">Dictation Trigger Mode</label>
+          <p class="section-desc">Choose how you prefer to activate speech-to-text.</p>
+
+          <div class="mode-cards">
+            <div class="mode-card" id="mode-card-toggle" data-mode="toggle">
+              <div class="mode-card-header">
+                <span class="mode-badge">Hands-Free</span>
+                <input type="radio" name="dictationMode" value="toggle" checked>
+              </div>
+              <div class="mode-card-title">Tap to Start / Stop</div>
+              <p class="mode-card-desc">Press your shortcut once to start speaking. Speak as long as you want, then press it again to paste.</p>
+            </div>
+
+            <div class="mode-card" id="mode-card-ptt" data-mode="push_to_talk">
+              <div class="mode-card-header">
+                <span class="mode-badge ptt-badge">Push-to-Talk</span>
+                <input type="radio" name="dictationMode" value="push_to_talk">
+              </div>
+              <div class="mode-card-title">Hold to Speak</div>
+              <p class="mode-card-desc">Hold your shortcut keys while talking. Release the keys to immediately finish and paste. Zero extra clicks.</p>
+            </div>
           </div>
-          <span class="recorder-hint" id="recorder-hint">Click to change shortcut</span>
         </div>
 
-        <div class="preset-chips">
-          <span class="preset-label">Presets:</span>
-          <button type="button" class="preset-chip" data-shortcut="CommandOrControl+Shift+Space">Ctrl+Shift+Space</button>
-          <button type="button" class="preset-chip" data-shortcut="CommandOrControl+Space">Ctrl+Space</button>
-          <button type="button" class="preset-chip" data-shortcut="Alt+Space">Alt+Space</button>
-          <button type="button" class="preset-chip" data-shortcut="CommandOrControl+Shift+D">Ctrl+Shift+D</button>
+        <!-- Primary Shortcut: Verbatim Dictation -->
+        <div class="form-section" id="section-shortcut">
+          <div class="section-header-flex">
+            <div>
+              <label class="section-title">Primary Shortcut (Verbatim Dictation)</label>
+              <p class="section-desc">Types the exact, unaltered words coming out of your mouth.</p>
+            </div>
+            <span class="mode-indicator-pill verbatim-pill">Verbatim</span>
+          </div>
+          
+          <div class="shortcut-recorder" id="shortcut-recorder-box" tabindex="0">
+            <div class="shortcut-keys" id="shortcut-badges">
+              <!-- Badges rendered by JS -->
+            </div>
+            <span class="recorder-hint" id="recorder-hint">Click to change shortcut</span>
+          </div>
+
+          <div class="preset-chips">
+            <span class="preset-label">Presets:</span>
+            <button type="button" class="preset-chip" data-target="primary" data-shortcut="CommandOrControl+Shift+Space">Ctrl+Shift+Space</button>
+            <button type="button" class="preset-chip" data-target="primary" data-shortcut="CommandOrControl+Space">Ctrl+Space</button>
+            <button type="button" class="preset-chip" data-target="primary" data-shortcut="Alt+Space">Alt+Space</button>
+            <button type="button" class="preset-chip" data-target="primary" data-shortcut="CommandOrControl+Shift+D">Ctrl+Shift+D</button>
+          </div>
+        </div>
+
+        <!-- Secondary Shortcut: Smart AI Polish -->
+        <div class="form-section">
+          <div class="section-header-flex">
+            <div>
+              <label class="section-title">Secondary Shortcut (Smart AI Polish)</label>
+              <p class="section-desc">Eliminates fillers ('um', 'uh'), polishes grammar, and formats lists and bullet points.</p>
+            </div>
+            <span class="mode-indicator-pill smart-pill">Smart AI</span>
+          </div>
+          
+          <div class="shortcut-recorder" id="secondary-shortcut-box" tabindex="0">
+            <div class="shortcut-keys" id="secondary-badges">
+              <!-- Badges rendered by JS -->
+            </div>
+            <span class="recorder-hint" id="secondary-recorder-hint">Click to change shortcut</span>
+          </div>
+
+          <div class="preset-chips">
+            <span class="preset-label">Presets:</span>
+            <button type="button" class="preset-chip" data-target="secondary" data-shortcut="CommandOrControl+Shift+K">Ctrl+Shift+K</button>
+            <button type="button" class="preset-chip" data-target="secondary" data-shortcut="CommandOrControl+Alt+S">Ctrl+Alt+S</button>
+            <button type="button" class="preset-chip" data-target="secondary" data-shortcut="CommandOrControl+Shift+L">Ctrl+Shift+L</button>
+          </div>
         </div>
 
         <div class="shortcut-actions">
           <button type="button" id="btn-test-pill" class="btn btn-pill-trigger">🎙️ Test Floating Orb Now</button>
-          <button type="button" id="btn-reset-shortcut" class="text-button">Reset to Default (Ctrl+Shift+Space)</button>
+          <button type="button" id="btn-reset-shortcut" class="text-button">Reset Shortcuts to Default</button>
         </div>
       </div>
 
-      <!-- Section 2: AI Context Engine -->
-      <div class="form-section">
-        <div class="section-row-toggle">
-          <div>
-            <label class="section-title">AI Context Engine (Groq LLM)</label>
-            <p class="section-desc">Context-aware formatting: turns "number one" into numbered lists ("1."), handles spoken numbers vs digits, natural commas, periods, capitalization, and brackets.</p>
+      <!-- TAB 2: AI & Vocabulary -->
+      <div class="tab-panel" id="tab-intelligence" role="tabpanel">
+        <!-- AI Context Engine Toggle -->
+        <div class="form-section">
+          <div class="section-row-toggle">
+            <div>
+              <label class="section-title">AI Context Engine (Groq LLM)</label>
+              <p class="section-desc">Context-aware formatting: turns "number one" into numbered lists ("1."), handles spoken numbers vs digits, natural commas, periods, capitalization, and brackets.</p>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="ai-intelligence-toggle" checked>
+              <span class="switch-slider"></span>
+            </label>
           </div>
-          <label class="switch-toggle">
-            <input type="checkbox" id="ai-intelligence-toggle" checked>
-            <span class="switch-slider"></span>
-          </label>
+        </div>
+
+        <!-- Personal Vocabulary / Custom Dictionary -->
+        <div class="form-section">
+          <label class="section-title">Personal Vocabulary & Custom Terms</label>
+          <p class="section-desc">Comma-separated names, technical jargon, acronyms, or uncommon words. Injected directly into Whisper's prompt to ensure 100% precision recognition.</p>
+          <div class="input-group">
+            <textarea id="custom-vocabulary-input" class="textarea-input" rows="4" placeholder="e.g. Olamide, Kubernetes, Groq, TypeScript, GraphQL, Next.js, API, PostgreSQL"></textarea>
+          </div>
+          <div class="vocabulary-hint">
+            💡 Whisper uses these exact terms as context priors so it will never confuse your specialized terminology.
+          </div>
+        </div>
+
+        <div class="developer-note">
+          🔒 Speech & AI services are managed and pre-configured. No API key configuration required.
         </div>
       </div>
 
-      <!-- Section 3: Advanced Options -->
-      <div class="form-section">
-        <label class="section-title">Paste & Injection Timing</label>
-        <div class="input-group inline">
-          <label for="paste-delay-input">Paste delay after transcription (ms)</label>
-          <input type="number" id="paste-delay-input" min="20" max="1000" step="10" value="80" class="number-input">
+      <!-- TAB 3: Paste & Audio -->
+      <div class="tab-panel" id="tab-paste" role="tabpanel">
+        <!-- Sound Feedback -->
+        <div class="form-section">
+          <div class="section-row-toggle">
+            <div>
+              <label class="section-title">Audio Chime Feedback</label>
+              <p class="section-desc">Plays zero-latency synthesized audio chimes when dictation starts (rising chime), stops (gentle pop), or encounters an error.</p>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="sound-feedback-toggle" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Paste Method -->
+        <div class="form-section">
+          <label class="section-title">Universal Paste Method</label>
+          <p class="section-desc">Select how Listen simulates keystrokes into your target app.</p>
+          
+          <div class="input-group">
+            <select id="paste-method-select" class="select-input">
+              <option value="default">Standard (Ctrl+V) — Browsers, Word, Slack, VS Code (Recommended)</option>
+              <option value="terminal">Terminal (Ctrl+Shift+V) — WSL, PowerShell, Git Bash, Windows Terminal</option>
+              <option value="shift_insert">Shift + Insert — Universal & Remote Desktop fallback</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Clipboard Restoration -->
+        <div class="form-section">
+          <div class="section-row-toggle">
+            <div>
+              <label class="section-title">Restore Original Clipboard</label>
+              <p class="section-desc">Automatically restores what you had previously copied to the clipboard after pasting your transcription. Never lose your clipboard history.</p>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="restore-clipboard-toggle" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Paste Delay -->
+        <div class="form-section">
+          <div class="input-group inline">
+            <div>
+              <label class="section-title" for="paste-delay-input">Paste Timing Delay</label>
+              <p class="section-desc">Delay in milliseconds after focusing the target window before firing paste.</p>
+            </div>
+            <div class="delay-input-wrapper">
+              <input type="number" id="paste-delay-input" min="20" max="1000" step="10" value="80" class="number-input">
+              <span class="unit-text">ms</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="developer-note">
-        🔒 Speech & AI services are managed and pre-configured. No API key configuration required.
+      <!-- TAB 4: Transcription History -->
+      <div class="tab-panel" id="tab-history" role="tabpanel">
+        <div class="history-header-actions">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="history-search-input" class="search-input" placeholder="Search past transcriptions...">
+          </div>
+          <button type="button" id="btn-clear-history" class="btn btn-secondary btn-sm">Clear History</button>
+        </div>
+
+        <div id="history-list" class="history-list">
+          <!-- Populated by JavaScript -->
+        </div>
+
+        <div id="history-empty" class="history-empty" style="display: none;">
+          <div class="empty-icon">📝</div>
+          <div class="empty-title">No transcriptions yet</div>
+          <div class="empty-desc">Your recorded dictations and polished transcriptions will automatically appear here with 1-click re-copying.</div>
+        </div>
       </div>
     </main>
 

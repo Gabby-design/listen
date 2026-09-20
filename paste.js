@@ -3,23 +3,31 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-let cachedVbsPath = null;
+const vbsCache = {};
 
-function getWindowsVbsScript() {
-  if (cachedVbsPath && fs.existsSync(cachedVbsPath)) {
-    return cachedVbsPath;
+function getWindowsVbsScript(method = 'default') {
+  if (vbsCache[method] && fs.existsSync(vbsCache[method])) {
+    return vbsCache[method];
   }
+
+  let sendKeysSequence = '^v';
+  if (method === 'terminal') {
+    sendKeysSequence = '^+v'; // Ctrl+Shift+V
+  } else if (method === 'shift_insert') {
+    sendKeysSequence = '+{INSERT}'; // Shift+Insert
+  }
+
   const tempDir = os.tmpdir();
-  const vbsPath = path.join(tempDir, 'listen_paste.vbs');
+  const vbsPath = path.join(tempDir, `listen_paste_${method}.vbs`);
   const vbsContent = [
     'Set WshShell = CreateObject("WScript.Shell")',
     'WScript.Sleep 20',
-    'WshShell.SendKeys "^v"'
+    `WshShell.SendKeys "${sendKeysSequence}"`
   ].join('\r\n');
 
   try {
     fs.writeFileSync(vbsPath, vbsContent, 'utf8');
-    cachedVbsPath = vbsPath;
+    vbsCache[method] = vbsPath;
     return vbsPath;
   } catch (err) {
     console.error('Failed to create VBS script for paste:', err);
@@ -28,25 +36,28 @@ function getWindowsVbsScript() {
 }
 
 /**
- * Simulates Ctrl+V (or Cmd+V on macOS) to paste the clipboard contents into active focus.
+ * Simulates paste into active focus with configurable method and delay.
  * @param {number} delayMs Delay before pasting in milliseconds (default: 80ms)
+ * @param {string} method 'default' (Ctrl+V) | 'terminal' (Ctrl+Shift+V) | 'shift_insert' (Shift+Insert)
  * @returns {Promise<boolean>}
  */
-function simulatePaste(delayMs = 80) {
+function simulatePaste(delayMs = 80, method = 'default') {
   return new Promise((resolve) => {
     setTimeout(() => {
       const platform = process.platform;
 
       if (platform === 'win32') {
-        const vbsPath = getWindowsVbsScript();
+        const vbsPath = getWindowsVbsScript(method);
         if (vbsPath) {
-          // wscript is a GUI program, so it never opens a console/cmd popup window!
           execFile('wscript.exe', ['//nologo', vbsPath], (err) => {
             if (err) {
               console.warn('wscript paste failed, falling back to powershell:', err);
-              // Fallback to PowerShell SendKeys
+              let psKeys = '^v';
+              if (method === 'terminal') psKeys = '^+v';
+              else if (method === 'shift_insert') psKeys = '+{INSERT}';
+
               exec(
-                'powershell.exe -NoProfile -NonInteractive -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait(\'^v\')"',
+                `powershell.exe -NoProfile -NonInteractive -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('${psKeys}')"`,
                 { windowsHide: true },
                 (psErr) => {
                   if (psErr) console.error('PowerShell paste failed:', psErr);
@@ -58,9 +69,12 @@ function simulatePaste(delayMs = 80) {
             }
           });
         } else {
-          // Fallback to PowerShell
+          let psKeys = '^v';
+          if (method === 'terminal') psKeys = '^+v';
+          else if (method === 'shift_insert') psKeys = '+{INSERT}';
+
           exec(
-            'powershell.exe -NoProfile -NonInteractive -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait(\'^v\')"',
+            `powershell.exe -NoProfile -NonInteractive -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('${psKeys}')"`,
             { windowsHide: true },
             (psErr) => {
               if (psErr) console.error('PowerShell paste fallback failed:', psErr);
@@ -79,7 +93,8 @@ function simulatePaste(delayMs = 80) {
         );
       } else {
         // Linux: xdotool
-        exec('xdotool key ctrl+v', (err) => {
+        const keyCmd = method === 'terminal' ? 'ctrl+shift+v' : 'ctrl+v';
+        exec(`xdotool key ${keyCmd}`, (err) => {
           if (err) console.error('Linux paste failed:', err);
           resolve(!err);
         });

@@ -15,6 +15,8 @@ const fs = require('fs');
 
 const { loadConfig, saveConfig, getShortcutDisplay } = require('./config');
 const { simulatePaste } = require('./paste');
+const { execFile } = require('child_process');
+const { loadHistory, addHistoryItem, clearHistory } = require('./history');
 
 app.name = 'Listen';
 app.commandLine.appendSwitch('use-fake-ui-for-media-stream');
@@ -31,7 +33,69 @@ let tray = null;
 let overlayWindow = null;
 let settingsWindow = null;
 let appState = 'idle'; // 'idle' | 'recording' | 'processing'
+let activeMode = 'verbatim'; // 'verbatim' | 'smart_ai'
 let registeredShortcuts = [];
+let keyWatcherProcess = null;
+
+function getKeyWatcherPath() {
+  const localPath = path.join(__dirname, 'assets', 'bin', 'keywatcher.exe');
+  if (app.isPackaged) {
+    const unpacked = path.join(process.resourcesPath, 'app.asar.unpacked', 'assets', 'bin', 'keywatcher.exe');
+    if (fs.existsSync(unpacked)) return unpacked;
+  }
+  if (fs.existsSync(localPath)) return localPath;
+  return null;
+}
+
+function getVirtualKeyCodesForShortcut(shortcut) {
+  if (!shortcut) return ['0x11', '0x10', '0x20'];
+  const parts = shortcut.split('+').map(p => p.trim());
+  const vks = [];
+  for (const part of parts) {
+    const p = part.toLowerCase();
+    if (p === 'commandorcontrol' || p === 'control' || p === 'ctrl') vks.push('0x11');
+    else if (p === 'shift') vks.push('0x10');
+    else if (p === 'alt') vks.push('0x12');
+    else if (p === 'space') vks.push('0x20');
+    else if (p === 'escape' || p === 'esc') vks.push('0x1B');
+    else if (p.length === 1 && p >= 'a' && p <= 'z') vks.push('0x' + p.toUpperCase().charCodeAt(0).toString(16));
+    else if (p.length === 1 && p >= '0' && p <= '9') vks.push('0x' + p.charCodeAt(0).toString(16));
+    else if (p.startsWith('f') && parseInt(p.slice(1)) >= 1 && parseInt(p.slice(1)) <= 12) {
+      vks.push('0x' + (0x70 + parseInt(p.slice(1)) - 1).toString(16));
+    }
+  }
+  return vks.length > 0 ? vks : ['0x11', '0x10', '0x20'];
+}
+
+function stopKeyWatcher() {
+  if (keyWatcherProcess) {
+    try {
+      keyWatcherProcess.kill();
+    } catch (e) {}
+    keyWatcherProcess = null;
+  }
+}
+
+function startPushToTalkWatcher(shortcutStr) {
+  if (process.platform !== 'win32') return;
+  const watcherPath = getKeyWatcherPath();
+  if (!watcherPath || !fs.existsSync(watcherPath)) return;
+
+  stopKeyWatcher();
+  const vks = getVirtualKeyCodesForShortcut(shortcutStr);
+
+  try {
+    keyWatcherProcess = execFile(watcherPath, ['wait-release', ...vks], (err) => {
+      keyWatcherProcess = null;
+      if (appState === 'recording' && config.dictationMode === 'push_to_talk') {
+        console.log('Push-to-talk key released -> stopping recording');
+        handleShortcutPressed(false, true);
+      }
+    });
+  } catch (err) {
+    console.error('Error starting keywatcher:', err);
+  }
+}
 
 // Enforce single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -125,9 +189,11 @@ function openSettingsWindow(triggerRecorder = false, isFirstLaunch = false) {
   }
 
   settingsWindow = new BrowserWindow({
-    width: 540,
-    height: 720,
-    resizable: false,
+    width: 580,
+    height: 740,
+    minWidth: 520,
+    minHeight: 640,
+    resizable: true,
     maximizable: false,
     title: 'Listen - Settings',
     backgroundColor: '#0f111a',
@@ -185,11 +251,17 @@ function updateTrayMenu() {
   if (!tray) return;
 
   const currentShortcutDisplay = getShortcutDisplay(config.shortcut);
+  const secondaryDisplay = config.secondaryShortcut ? getShortcutDisplay(config.secondaryShortcut) : 'None';
+  const modeDisplay = config.dictationMode === 'push_to_talk' ? 'Push-to-Talk' : 'Toggle';
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: appState === 'recording' ? '⏹️ Stop Dictation' : '🎙️ Start Dictation',
-      click: () => handleShortcutPressed()
+      label: appState === 'recording' ? '⏹️ Stop Dictation' : '🎙️ Start Dictation (Verbatim)',
+      click: () => handleShortcutPressed(false, false)
+    },
+    {
+      label: '✨ Start Dictation (Smart Polish)',
+      click: () => handleShortcutPressed(true, false)
     },
     { type: 'separator' },
     {
@@ -200,8 +272,17 @@ function updateTrayMenu() {
       label: 'Re-record Shortcut',
       click: () => openSettingsWindow(true)
     },
+    { type: 'separator' },
     {
-      label: `Shortcut: ${currentShortcutDisplay}`,
+      label: `Mode: ${modeDisplay}`,
+      enabled: false
+    },
+    {
+      label: `Verbatim Hotkey: ${currentShortcutDisplay}`,
+      enabled: false
+    },
+    {
+      label: `Smart Polish Hotkey: ${secondaryDisplay}`,
       enabled: false
     },
     { type: 'separator' },
@@ -217,7 +298,7 @@ function updateTrayMenu() {
   tray.setContextMenu(contextMenu);
 }
 
-// Register Global Shortcut with fallbacks
+// Register Global Shortcut with fallbacks and secondary hotkey
 function registerGlobalShortcut() {
   if (Array.isArray(registeredShortcuts)) {
     for (const sc of registeredShortcuts) {
@@ -229,60 +310,88 @@ function registerGlobalShortcut() {
   registeredShortcuts = [];
 
   const primary = config.shortcut || 'CommandOrControl+Shift+Space';
-  const listToRegister = [primary];
+  const listToRegister = [{ key: primary, secondary: false }];
+
+  // Secondary shortcut for Smart AI Polish mode
+  if (config.secondaryShortcut && config.secondaryShortcut.trim()) {
+    listToRegister.push({ key: config.secondaryShortcut.trim(), secondary: true });
+  }
 
   // Windows resilience: register fallback hotkeys so IME switching doesn't block dictation
   if (primary.toLowerCase().includes('shift') || primary.includes('Space')) {
-    if (!listToRegister.includes('CommandOrControl+Space')) {
-      listToRegister.push('CommandOrControl+Space');
+    if (!listToRegister.some(item => item.key === 'CommandOrControl+Space')) {
+      listToRegister.push({ key: 'CommandOrControl+Space', secondary: false });
     }
-    if (!listToRegister.includes('Alt+Space')) {
-      listToRegister.push('Alt+Space');
+    if (!listToRegister.some(item => item.key === 'Alt+Space')) {
+      listToRegister.push({ key: 'Alt+Space', secondary: false });
     }
   }
 
-  for (const sc of listToRegister) {
+  for (const item of listToRegister) {
     try {
-      const ok = globalShortcut.register(sc, handleShortcutPressed);
+      const ok = globalShortcut.register(item.key, () => handleShortcutPressed(item.secondary, false));
       if (ok) {
-        registeredShortcuts.push(sc);
-        console.log(`Global shortcut registered: ${sc}`);
+        registeredShortcuts.push(item.key);
+        console.log(`Global shortcut registered: ${item.key} (secondary: ${item.secondary})`);
       } else {
-        console.warn(`Could not register shortcut: ${sc}`);
+        console.warn(`Could not register shortcut: ${item.key}`);
       }
     } catch (err) {
-      console.error(`Error registering shortcut ${sc}:`, err);
+      console.error(`Error registering shortcut ${item.key}:`, err);
     }
   }
 
   updateTrayMenu();
 }
 
-// Shortcut Toggle Handler
-function handleShortcutPressed() {
-  console.log(`handleShortcutPressed called. Current state: ${appState}`);
+// Shortcut Handler (Supports both Toggle and Push-to-Talk)
+function handleShortcutPressed(isSecondary = false, isReleaseTrigger = false) {
+  console.log(`handleShortcutPressed called. State: ${appState}, secondary: ${isSecondary}, releaseTrigger: ${isReleaseTrigger}`);
   if (!overlayWindow || overlayWindow.isDestroyed()) {
     createOverlayWindow();
   }
 
+  const mode = config.dictationMode || 'toggle';
+
   if (appState === 'idle') {
     // Start Recording
+    activeMode = isSecondary ? 'smart_ai' : 'verbatim';
     appState = 'recording';
     updateTrayMenu();
-    overlayWindow.webContents.send('reset-state');
-    overlayWindow.webContents.send('start-recording');
 
-    // Show without stealing focus from active window/cursor
-    overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-    overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    overlayWindow.showInactive();
-    overlayWindow.moveTop();
-    console.log('Overlay window shown (recording started).');
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.webContents.send('set-sound-feedback', config.soundFeedback !== false);
+      overlayWindow.webContents.send('reset-state');
+      overlayWindow.webContents.send('start-recording');
+
+      // Show without stealing focus from active window/cursor
+      overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+      overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+      overlayWindow.showInactive();
+      overlayWindow.moveTop();
+    }
+    console.log(`Overlay window shown (recording started, mode: ${activeMode}).`);
+
+    // In Push-to-Talk mode, start native key release watcher
+    if (mode === 'push_to_talk') {
+      const activeShortcut = isSecondary ? config.secondaryShortcut : config.shortcut;
+      startPushToTalkWatcher(activeShortcut);
+    }
   } else if (appState === 'recording') {
+    if (mode === 'push_to_talk') {
+      // In push-to-talk mode, only actual key release triggers stop; ignore OS keydown repeats
+      if (!isReleaseTrigger) {
+        return;
+      }
+    }
+
     // Stop Recording & Begin Processing
+    stopKeyWatcher();
     appState = 'processing';
     updateTrayMenu();
-    overlayWindow.webContents.send('stop-recording');
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.webContents.send('stop-recording');
+    }
     console.log('Recording stopped, transcribing...');
   } else if (appState === 'processing') {
     console.log('Currently transcribing audio, please wait...');
@@ -341,8 +450,8 @@ function formatTranscription(rawText) {
   return text.trim();
 }
 
-// Two-stage AI context engine: Polishes raw speech with natural punctuation, lists, numbers, and brackets
-async function enhanceTranscriptionWithAI(rawText) {
+// Two-stage AI context engine: Polishes speech with natural punctuation, lists, numbers, or full smart polish
+async function enhanceTranscriptionWithAI(rawText, mode = 'verbatim') {
   if (!rawText || !rawText.trim()) return '';
   if (config.aiIntelligence === false) {
     return formatTranscription(rawText);
@@ -359,7 +468,18 @@ async function enhanceTranscriptionWithAI(rawText) {
     ? 'https://api.groq.com/openai/v1/chat/completions'
     : 'https://api.openai.com/v1/chat/completions';
 
-  const systemPrompt = `You are Listen AI, an exact verbatim dictation formatter.
+  let systemPrompt = '';
+  if (mode === 'smart_ai') {
+    systemPrompt = `You are Listen AI in Smart Polish Mode.
+Transform spoken speech into clear, professional, beautifully written text.
+RULES:
+1. Clean up vocal hesitations and filler words ("um", "uh", "you know", "like" when used as filler).
+2. Fix obvious grammatical slips while faithfully preserving the speaker's true meaning and authentic voice.
+3. Automatically format spoken lists or numbered steps into clean bullet points or numbered lists.
+4. Correct punctuation, capitalization, and paragraph breaks for maximum readability.
+5. Output ONLY the polished text with NO preamble, explanation, notes, or markdown code fences.`;
+  } else {
+    systemPrompt = `You are Listen AI, an exact verbatim dictation formatter.
 
 CRITICAL VERBATIM RULES:
 1. PRESERVE EVERY SINGLE WORD EXACTLY AS SPOKEN.
@@ -375,6 +495,7 @@ CRITICAL VERBATIM RULES:
 3. STRICT OUTPUT:
    - Output ONLY the final formatted text.
    - Do NOT add any preamble, explanation, notes, or markdown code fences (\`\`\`).`;
+  }
 
   try {
     const controller = new AbortController();
@@ -392,7 +513,7 @@ CRITICAL VERBATIM RULES:
           { role: 'system', content: systemPrompt },
           { role: 'user', content: rawText }
         ],
-        temperature: 0.0,
+        temperature: mode === 'smart_ai' ? 0.2 : 0.0,
         max_tokens: 4096
       }),
       signal: controller.signal
@@ -446,6 +567,11 @@ async function transcribeAudio(buffer, mimeType) {
     formData.append('language', config.language);
   }
 
+  // Personal Vocabulary / Custom Words injection into Whisper context prompt
+  if (config.customVocabulary && config.customVocabulary.trim()) {
+    formData.append('prompt', config.customVocabulary.trim());
+  }
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -474,6 +600,7 @@ async function transcribeAudio(buffer, mimeType) {
 // Show temporary error on overlay
 function handleOverlayError(errorMessage) {
   appState = 'idle';
+  stopKeyWatcher();
   if (!overlayWindow || overlayWindow.isDestroyed()) return;
 
   overlayWindow.webContents.send('show-error', errorMessage);
@@ -497,15 +624,15 @@ function setupIpcHandlers() {
         return;
       }
 
-      console.log(`Transcribing ${buffer.byteLength} bytes using ${config.provider}...`);
+      console.log(`Transcribing ${buffer.byteLength} bytes using ${config.provider}... (mode: ${activeMode})`);
       const rawText = await transcribeAudio(buffer, mimeType);
 
       let transcribedText = '';
       if (rawText && rawText.trim()) {
         console.log(`Raw Whisper transcription: "${rawText}"`);
         if (config.aiIntelligence !== false) {
-          console.log('Applying AI Context Engine...');
-          transcribedText = await enhanceTranscriptionWithAI(rawText);
+          console.log(`Applying AI Context Engine (mode: ${activeMode})...`);
+          transcribedText = await enhanceTranscriptionWithAI(rawText, activeMode);
         } else {
           transcribedText = formatTranscription(rawText);
         }
@@ -522,18 +649,39 @@ function setupIpcHandlers() {
 
       console.log('Transcription succeeded:', transcribedText);
 
-      // Write transcribed text to system clipboard
+      // 1. Save to local history drawer so user never loses spoken content
+      addHistoryItem(transcribedText, activeMode);
+
+      // 2. Preserve previous clipboard content if restoreClipboard is enabled
+      let previousClipboard = null;
+      if (config.restoreClipboard !== false) {
+        try {
+          previousClipboard = clipboard.readText();
+        } catch (e) {}
+      }
+
+      // 3. Write transcribed text to system clipboard
       clipboard.writeText(transcribedText);
 
-      // Hide overlay immediately
+      // 4. Hide overlay immediately
       if (overlayWindow && !overlayWindow.isDestroyed()) {
         overlayWindow.hide();
       }
       appState = 'idle';
 
-      // Wait brief focus stability delay and trigger paste
+      // 5. Wait brief focus stability delay and trigger paste
       const delay = config.pasteDelayMs || 80;
-      await simulatePaste(delay);
+      const pasteMethod = config.pasteMethod || 'default';
+      await simulatePaste(delay, pasteMethod);
+
+      // 6. Restore user's previous clipboard so it's not destroyed
+      if (previousClipboard !== null) {
+        setTimeout(() => {
+          try {
+            clipboard.writeText(previousClipboard);
+          } catch (e) {}
+        }, 180);
+      }
     } catch (err) {
       console.error('Transcription error:', err);
       let displayMsg = 'Error: STT failed';
@@ -570,8 +718,20 @@ function setupIpcHandlers() {
     if (result.success) {
       config = result.config;
       registerGlobalShortcut();
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.webContents.send('set-sound-feedback', config.soundFeedback !== false);
+      }
     }
     return result;
+  });
+
+  // Settings: History Management
+  ipcMain.handle('get-history', () => {
+    return loadHistory();
+  });
+
+  ipcMain.handle('clear-history', () => {
+    return clearHistory();
   });
 
   // Settings: Test API Key

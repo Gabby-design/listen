@@ -7,11 +7,15 @@ const DEFAULT_CONFIG = {
   apiKey: process.env.GROQ_API_KEY || '',
   model: 'whisper-large-v3', // 'whisper-large-v3' | 'whisper-1'
   shortcut: 'CommandOrControl+Shift+Space',
+  secondaryShortcut: 'CommandOrControl+Shift+K',
+  dictationMode: 'toggle', // 'toggle' | 'push_to_talk'
   language: 'en',
+  pasteMethod: 'default', // 'default' (Ctrl+V) | 'terminal' (Ctrl+Shift+V) | 'shift_insert'
   pasteDelayMs: 80,
-  restoreClipboard: false,
+  restoreClipboard: true,
   soundFeedback: true,
   aiIntelligence: true,
+  customVocabulary: '',
   firstLaunchCompleted: false
 };
 
