@@ -1,16 +1,4 @@
-// Settings Controller
-const providerGroq = document.getElementById('provider-groq');
-const providerOpenAI = document.getElementById('provider-openai');
-const cardGroq = document.getElementById('card-groq');
-const cardOpenAI = document.getElementById('card-openai');
-const modelSelect = document.getElementById('model-select');
-const apiKeyInput = document.getElementById('api-key-input');
-const toggleKeyVisibility = document.getElementById('toggle-key-visibility');
-const btnTestKey = document.getElementById('btn-test-key');
-const testKeyStatus = document.getElementById('test-key-status');
-const apiHint = document.getElementById('api-hint');
-const linkProviderConsole = document.getElementById('link-provider-console');
-
+// Listen Settings Controller - Focused exclusively on Shortcut & User Preferences
 const shortcutBox = document.getElementById('shortcut-recorder-box');
 const shortcutBadges = document.getElementById('shortcut-badges');
 const recorderHint = document.getElementById('recorder-hint');
@@ -27,17 +15,6 @@ const btnSave = document.getElementById('btn-save');
 const btnCancel = document.getElementById('btn-cancel');
 const saveStatus = document.getElementById('save-status');
 
-const MODELS = {
-  groq: [
-    { value: 'whisper-large-v3-turbo', label: 'whisper-large-v3-turbo (Fastest, High Quality)' },
-    { value: 'whisper-large-v3', label: 'whisper-large-v3 (Maximum Accuracy)' },
-    { value: 'distil-whisper-large-v3-en', label: 'distil-whisper-large-v3-en (English Optimized)' }
-  ],
-  openai: [
-    { value: 'whisper-1', label: 'whisper-1 (OpenAI Standard Whisper)' }
-  ]
-};
-
 let currentConfig = {};
 let isRecordingShortcut = false;
 let recordedShortcut = 'CommandOrControl+Shift+Space';
@@ -51,21 +28,6 @@ async function init() {
 }
 
 function populateForm(config) {
-  // Provider
-  const provider = config.provider || 'groq';
-  if (provider === 'openai') {
-    providerOpenAI.checked = true;
-  } else {
-    providerGroq.checked = true;
-  }
-  updateProviderSelection();
-
-  // Model
-  populateModels(provider, config.model);
-
-  // API Key
-  apiKeyInput.value = config.apiKey || '';
-
   // Shortcut
   recordedShortcut = config.shortcut || 'CommandOrControl+Shift+Space';
   renderShortcutBadges(recordedShortcut);
@@ -76,38 +38,8 @@ function populateForm(config) {
   }
 
   // Paste Delay
-  pasteDelayInput.value = config.pasteDelayMs || 80;
-}
-
-function populateModels(provider, selectedModel) {
-  modelSelect.innerHTML = '';
-  const list = MODELS[provider] || MODELS.groq;
-  list.forEach(m => {
-    const opt = document.createElement('option');
-    opt.value = m.value;
-    opt.textContent = m.label;
-    if (m.value === selectedModel) {
-      opt.selected = true;
-    }
-    modelSelect.appendChild(opt);
-  });
-}
-
-function updateProviderSelection() {
-  const isGroq = providerGroq.checked;
-  cardGroq.classList.toggle('active', isGroq);
-  cardOpenAI.classList.toggle('active', !isGroq);
-
-  if (isGroq) {
-    apiHint.innerHTML = 'Get your Groq API key at <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a>';
-    if (!apiKeyInput.value.startsWith('gsk_') && !apiKeyInput.value.trim()) {
-      apiKeyInput.placeholder = 'Paste your Groq key here (gsk_...)';
-    }
-  } else {
-    apiHint.innerHTML = 'Get your OpenAI API key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>';
-    if (!apiKeyInput.value.startsWith('sk-') && !apiKeyInput.value.trim()) {
-      apiKeyInput.placeholder = 'Paste your OpenAI key here (sk-...)';
-    }
+  if (pasteDelayInput) {
+    pasteDelayInput.value = config.pasteDelayMs || 80;
   }
 }
 
@@ -156,56 +88,6 @@ function stopRecordingShortcut(newShortcut) {
 }
 
 function setupEvents() {
-  // Provider radio change
-  providerGroq.addEventListener('change', () => {
-    updateProviderSelection();
-    populateModels('groq');
-  });
-
-  providerOpenAI.addEventListener('change', () => {
-    updateProviderSelection();
-    populateModels('openai');
-  });
-
-  // Toggle API key password view
-  toggleKeyVisibility.addEventListener('click', () => {
-    if (apiKeyInput.type === 'password') {
-      apiKeyInput.type = 'text';
-    } else {
-      apiKeyInput.type = 'password';
-    }
-  });
-
-  // Test API Key
-  btnTestKey.addEventListener('click', async () => {
-    const key = apiKeyInput.value.trim();
-    const provider = providerGroq.checked ? 'groq' : 'openai';
-    const model = modelSelect.value;
-
-    if (!key) {
-      testKeyStatus.className = 'status-indicator error';
-      testKeyStatus.textContent = 'Please enter an API key first.';
-      return;
-    }
-
-    testKeyStatus.className = 'status-indicator loading';
-    testKeyStatus.textContent = 'Verifying API connection...';
-
-    try {
-      const res = await window.settingsApi.testApiKey({ provider, apiKey: key, model });
-      if (res.success) {
-        testKeyStatus.className = 'status-indicator success';
-        testKeyStatus.textContent = '✓ Connection successful and verified!';
-      } else {
-        testKeyStatus.className = 'status-indicator error';
-        testKeyStatus.textContent = '✗ ' + (res.error || 'Connection failed.');
-      }
-    } catch (err) {
-      testKeyStatus.className = 'status-indicator error';
-      testKeyStatus.textContent = '✗ Verification error: ' + err.message;
-    }
-  });
-
   // Interactive Shortcut Recorder
   shortcutBox.addEventListener('click', () => {
     startRecordingShortcut();
@@ -275,22 +157,23 @@ function setupEvents() {
     });
   }
 
-  // Save Config
+  // Save Config (preserves developer-managed provider, model, apiKey)
   btnSave.addEventListener('click', async () => {
     const updated = {
-      provider: providerGroq.checked ? 'groq' : 'openai',
-      model: modelSelect.value,
-      apiKey: apiKeyInput.value.trim(),
+      provider: currentConfig.provider || 'groq',
+      model: currentConfig.model || 'whisper-large-v3-turbo',
+      apiKey: currentConfig.apiKey || '',
       shortcut: recordedShortcut,
-      pasteDelayMs: parseInt(pasteDelayInput.value, 10) || 80,
+      pasteDelayMs: parseInt(pasteDelayInput ? pasteDelayInput.value : 80, 10) || 80,
       aiIntelligence: aiIntelligenceToggle ? aiIntelligenceToggle.checked : true
     };
 
     saveStatus.textContent = 'Saving...';
     const result = await window.settingsApi.saveConfig(updated);
     if (result.success) {
+      currentConfig = result.config;
       saveStatus.style.color = 'var(--success)';
-      saveStatus.textContent = '✓ Settings saved successfully!';
+      saveStatus.textContent = '✓ Shortcut saved successfully!';
       setTimeout(() => {
         saveStatus.textContent = '';
       }, 3000);
@@ -304,18 +187,19 @@ function setupEvents() {
   if (btnFinishOnboarding) {
     btnFinishOnboarding.addEventListener('click', async () => {
       const updated = {
-        provider: providerGroq.checked ? 'groq' : 'openai',
-        model: modelSelect.value,
-        apiKey: apiKeyInput.value.trim(),
+        provider: currentConfig.provider || 'groq',
+        model: currentConfig.model || 'whisper-large-v3-turbo',
+        apiKey: currentConfig.apiKey || '',
         shortcut: recordedShortcut,
-        pasteDelayMs: parseInt(pasteDelayInput.value, 10) || 80,
+        pasteDelayMs: parseInt(pasteDelayInput ? pasteDelayInput.value : 80, 10) || 80,
         aiIntelligence: aiIntelligenceToggle ? aiIntelligenceToggle.checked : true,
         firstLaunchCompleted: true
       };
 
-      saveStatus.textContent = 'Configuring your shortcut...';
+      saveStatus.textContent = 'Setting your shortcut...';
       const result = await window.settingsApi.saveConfig(updated);
       if (result.success) {
+        currentConfig = result.config;
         saveStatus.style.color = 'var(--success)';
         saveStatus.textContent = '✓ Ready to dictate! Closing setup...';
         setTimeout(() => {

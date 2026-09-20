@@ -4,6 +4,8 @@
   box-sizing: border-box;
   user-select: none;
   -webkit-user-select: none;
+  border: none;
+  outline: none;
 }
 
 html, body {
@@ -14,33 +16,31 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .orb-container {
-  width: 96px;
-  height: 96px;
+  width: 140px;
+  height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.4));
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
-}
-
-.orb-container.processing {
-  filter: drop-shadow(0 0 22px rgba(96, 165, 250, 0.6));
-}
-
-.orb-container.error {
-  filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.6));
-}
-
-.orb-container.done {
-  filter: drop-shadow(0 0 20px rgba(52, 211, 153, 0.6));
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 canvas {
-  width: 96px;
-  height: 96px;
+  width: 140px;
+  height: 140px;
   display: block;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }

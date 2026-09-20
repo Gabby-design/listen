@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Listen - Desktop & Web Voice Dictation</title>
+  <title>Listen - Thought-Speed Desktop Voice Dictation</title>
   <link rel="icon" type="image/png" href="assets/tray-icon.png">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6366f1">
@@ -14,15 +14,17 @@
     :root {
       --bg-dark: #090a10;
       --bg-card: #121524;
-      --bg-card-hover: #191d33;
+      --bg-card-hover: #181c32;
       --accent: #6366f1;
       --accent-glow: rgba(99, 102, 241, 0.35);
+      --accent-cyan: #38bdf8;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --border: rgba(255, 255, 255, 0.1);
+      --border-light: rgba(255, 255, 255, 0.18);
       --success: #10b981;
-      --error: #ef4444;
-      --radius: 12px;
+      --radius: 14px;
+      --radius-sm: 8px;
     }
 
     * {
@@ -39,99 +41,122 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 30px 20px 60px;
+      padding: 24px 20px 80px;
       overflow-x: hidden;
-      background-image: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, rgba(9, 10, 16, 0) 70%);
+      background-image: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.18) 0%, rgba(9, 10, 16, 0) 70%);
+      line-height: 1.6;
     }
 
-    /* Fixed Floating Fluid Orb at the bottom-center of the viewport */
-    .orb-wrapper {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
+    /* Top Navigation */
+    .nav-bar {
+      max-width: 960px;
+      width: 100%;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      cursor: pointer;
+      justify-content: space-between;
+      padding: 12px 0 32px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .orb-canvas-box {
-      width: 96px;
-      height: 96px;
-      position: relative;
-      filter: drop-shadow(0 0 20px rgba(56, 189, 248, 0.5));
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
     }
 
-    .orb-canvas-box:hover {
-      transform: scale(1.06);
-      filter: drop-shadow(0 0 28px rgba(56, 189, 248, 0.8));
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
     }
 
-    .orb-canvas-box.processing {
-      filter: drop-shadow(0 0 26px rgba(96, 165, 250, 0.85));
+    .brand-icon svg {
+      width: 22px;
+      height: 22px;
     }
 
-    .orb-hint-tag {
-      background: rgba(18, 20, 29, 0.85);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+    .brand-name {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-version {
+      font-size: 11px;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+      padding: 2px 8px;
       border-radius: 999px;
-      padding: 4px 12px;
-      font-size: 11.5px;
-      color: #94a3b8;
-      font-weight: 500;
-      letter-spacing: 0.02em;
-      transition: all 0.2s;
-      pointer-events: none;
+      font-weight: 600;
     }
 
-    .orb-wrapper:hover .orb-hint-tag {
-      color: #e2e8f0;
-      border-color: rgba(99, 102, 241, 0.4);
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--text-main);
     }
 
     /* Main Container */
     .container {
-      max-width: 860px;
+      max-width: 960px;
       width: 100%;
-      margin-top: 60px;
       display: flex;
       flex-direction: column;
-      gap: 32px;
+      gap: 56px;
+      margin-top: 24px;
     }
 
-    /* Hero Header */
+    /* Hero Section */
     .hero {
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 14px;
+      gap: 18px;
+      max-width: 820px;
+      margin: 0 auto;
     }
 
     .hero-badge {
       background: rgba(99, 102, 241, 0.15);
       border: 1px solid rgba(99, 102, 241, 0.4);
       color: #a5b4fc;
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 600;
-      padding: 6px 14px;
+      padding: 6px 16px;
       border-radius: 999px;
       letter-spacing: 0.05em;
       text-transform: uppercase;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
     .hero h1 {
-      font-size: 42px;
+      font-size: 48px;
       font-weight: 800;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.035em;
       background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #818cf8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -139,56 +164,28 @@
     }
 
     .hero p {
-      font-size: 16px;
+      font-size: 18px;
       color: var(--text-muted);
-      max-width: 580px;
-      line-height: 1.6;
+      max-width: 700px;
+      line-height: 1.65;
     }
 
-    /* Interactive Live Demo Area */
-    .demo-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
+    .cta-group {
       display: flex;
-      flex-direction: column;
-      gap: 20px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    }
-
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      gap: 14px;
+      margin-top: 10px;
       flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .card-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .controls-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .btn {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 20px;
-      font-size: 14px;
+      padding: 12px 24px;
+      font-size: 14.5px;
       font-weight: 600;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       border: none;
       transition: all 0.2s ease;
@@ -196,19 +193,14 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
       color: white;
-      box-shadow: 0 4px 14px var(--accent-glow);
+      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.4);
     }
 
     .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
-    }
-
-    .btn-primary.recording {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(2, 132, 199, 0.55);
     }
 
     .btn-secondary {
@@ -218,223 +210,219 @@
     }
 
     .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
     }
 
-    /* Shortcut Recorder Widget */
-    .shortcut-widget {
-      background: rgba(0, 0, 0, 0.25);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      cursor: pointer;
-      transition: border-color 0.2s;
-    }
-
-    .shortcut-widget:hover, .shortcut-widget.focus {
-      border-color: var(--accent);
-    }
-
-    .shortcut-keys {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .kbd {
-      background: #1e2235;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-bottom: 2px solid rgba(0, 0, 0, 0.5);
-      border-radius: 5px;
-      padding: 4px 10px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #e2e8f0;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-
-    .scratchpad {
-      width: 100%;
-      height: 140px;
-      background: #0d0f17;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px 16px;
-      color: #f1f5f9;
-      font-size: 15px;
-      line-height: 1.6;
-      resize: none;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .scratchpad:focus {
-      border-color: var(--accent);
-    }
-
-    /* Why I Built Listen - Story & Philosophy */
-    .story-section {
+    /* Content Section Formatting */
+    .content-section {
       display: flex;
       flex-direction: column;
-      gap: 28px;
-      margin-top: 10px;
+      gap: 24px;
     }
 
-    .story-header {
-      text-align: center;
-      max-width: 700px;
-      margin: 0 auto;
+    .section-header {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
-    .story-tag {
+    .section-tag {
       color: #818cf8;
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
 
-    .story-header h2 {
-      font-size: 32px;
+    .section-title {
+      font-size: 28px;
       font-weight: 800;
-      color: #fff;
       letter-spacing: -0.02em;
+      color: #ffffff;
     }
 
-    .story-header p {
-      font-size: 15.5px;
+    .section-lead {
+      font-size: 16px;
       color: var(--text-muted);
       line-height: 1.6;
+      max-width: 800px;
     }
 
-    .story-grid {
+    /* Editorial Narrative Cards */
+    .card-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
       gap: 20px;
     }
 
-    .story-card {
+    @media (max-width: 768px) {
+      .card-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero h1 {
+        font-size: 34px;
+      }
+    }
+
+    .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 26px 24px;
+      padding: 28px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
       transition: transform 0.2s ease, border-color 0.2s ease;
     }
 
-    .story-card:hover {
+    .card:hover {
       transform: translateY(-2px);
-      border-color: rgba(99, 102, 241, 0.4);
+      border-color: var(--border-light);
     }
 
-    .story-card::before {
-      content: '';
+    .card-accent-line {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 3px;
       background: linear-gradient(90deg, #6366f1 0%, #38bdf8 100%);
-      opacity: 0.8;
     }
 
-    .story-icon {
-      font-size: 30px;
+    .card-icon {
+      font-size: 32px;
     }
 
-    .story-card h3 {
-      font-size: 17.5px;
+    .card h3 {
+      font-size: 19px;
       font-weight: 700;
       color: #f8fafc;
       letter-spacing: -0.01em;
     }
 
-    .story-card p {
-      font-size: 14px;
+    .card p {
+      font-size: 14.5px;
       color: #94a3b8;
-      line-height: 1.65;
+      line-height: 1.7;
     }
 
-    .manifesto-quote {
+    /* Architecture / In-Depth Breakdown */
+    .tech-breakdown {
+      background: linear-gradient(135deg, rgba(18, 21, 36, 0.9) 0%, rgba(13, 16, 28, 0.95) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+    }
+
+    .tech-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .tech-step-item {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+    }
+
+    .tech-step-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.25);
+      border: 1px solid #6366f1;
+      color: #a5b4fc;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tech-step-item h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    .tech-step-item p {
+      font-size: 13.5px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    /* Quote / Philosophy Box */
+    .manifesto-box {
       background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%);
       border: 1px solid rgba(99, 102, 241, 0.3);
       border-radius: var(--radius);
-      padding: 32px 24px;
+      padding: 36px 28px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 14px;
+      gap: 16px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     }
 
-    .manifesto-quote blockquote {
-      font-size: 18px;
+    .manifesto-box blockquote {
+      font-size: 20px;
       font-weight: 500;
       color: #f1f5f9;
-      line-height: 1.6;
-      max-width: 680px;
+      line-height: 1.65;
+      max-width: 720px;
       font-style: italic;
     }
 
     .manifesto-author {
       font-size: 13px;
       color: #818cf8;
-      font-weight: 600;
-      letter-spacing: 0.05em;
+      font-weight: 700;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
     }
 
-    /* Feature Grid */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-    }
-
-    .feature-item {
-      background: rgba(18, 21, 36, 0.6);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px;
+    /* Action on PC Notice */
+    .pc-action-banner {
+      background: rgba(14, 165, 233, 0.08);
+      border: 1px solid rgba(14, 165, 233, 0.3);
+      border-radius: 10px;
+      padding: 16px 20px;
       display: flex;
+      align-items: center;
       gap: 14px;
+      color: #bae6fd;
+      font-size: 14px;
+      line-height: 1.5;
     }
 
-    .feature-icon {
+    .pc-action-banner span {
       font-size: 24px;
       flex-shrink: 0;
     }
 
-    .feature-item h4 {
-      font-size: 14.5px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .feature-item p {
-      font-size: 12.5px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
+    /* Footer */
     footer {
       margin-top: 40px;
       text-align: center;
-      font-size: 13px;
+      font-size: 13.5px;
       color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     footer a {
@@ -449,541 +437,262 @@
 </head>
 <body>
 
-  <!-- Floating Fluid Orb Demo Indicator at Bottom Screen -->
-  <div class="orb-wrapper" id="live-orb-btn" title="Click to start/stop dictation">
-    <div class="orb-canvas-box" id="orb-box">
-      <canvas id="orbCanvas" width="96" height="96"></canvas>
+  <!-- Top Navigation Bar -->
+  <header class="nav-bar">
+    <a href="#" class="brand-logo">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="22"></line>
+        </svg>
+      </div>
+      <div>
+        <span class="brand-name">Listen</span>
+        <span class="brand-version">v2.1.1</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="#who-built-it" class="nav-link">Creator</a>
+      <a href="#why-built" class="nav-link">Why Listen</a>
+      <a href="#how-it-works" class="nav-link">Architecture</a>
+      <a href="https://github.com/Gabby-design/listen" target="_blank" class="nav-link">GitHub</a>
     </div>
-    <span class="orb-hint-tag" id="demo-orb-text">🎙️ Click orb or press shortcut to dictate</span>
-  </div>
+  </header>
 
-  <div class="container">
+  <main class="container">
     <!-- Hero -->
     <section class="hero">
-      <div class="hero-badge">⚡ The Thought-Speed Dictation Engine</div>
+      <div class="hero-badge">⚡ The Thought-Speed Voice Engine</div>
       <h1>Speak at the Speed of Thought.<br>Intelligent Dictation for Every App.</h1>
       <p>
-        You think at 150 words per minute—stop letting a 40 WPM keyboard hold you back. Listen is an intelligent, whisper-quiet voice companion that turns natural speech into beautifully formatted text anywhere your cursor rests.
+        The human mind thinks at 150 words per minute. Physical keyboards bottleneck you to 40 WPM. Listen is an invisible, context-aware desktop companion that translates your spoken voice into polished, perfectly punctuated text wherever your cursor rests.
       </p>
-      <div style="display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; justify-content: center;">
-        <a href="https://github.com/Gabby-design/listen/releases" target="_blank" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
-          <span>⬇️ Download Windows Setup (v2.1.0)</span>
+      
+      <div class="cta-group">
+        <a href="https://github.com/Gabby-design/listen/releases" target="_blank" class="btn btn-primary">
+          <span>⬇️ Download Windows Setup (v2.1.1)</span>
         </a>
         <button id="btn-install-pwa" class="btn btn-secondary">
-          <span>📲 Install App on Phone</span>
+          <span>📲 Install Mobile App (PWA)</span>
         </button>
         <a href="https://github.com/Gabby-design/listen" target="_blank" class="btn btn-secondary">
           <span>📦 View on GitHub</span>
         </a>
       </div>
+
+      <div class="pc-action-banner" style="margin-top: 14px;">
+        <span>💡</span>
+        <div>
+          <strong>Desktop-First Action:</strong> The real-time speech engine and borderless floating orb operate natively on your computer once installed. No setup friction or manual API configuration required.
+        </div>
+      </div>
     </section>
 
-    <!-- Live In-Browser Demo -->
-    <section class="demo-card">
-      <div class="card-header">
-        <div class="card-title">
-          <span>🎙️ Live Dictation Scratchpad</span>
+    <!-- Section 1: Who Built It -->
+    <section class="content-section" id="who-built-it">
+      <div class="section-header">
+        <span class="section-tag">Origin & Team</span>
+        <h2 class="section-title">Who Built Listen?</h2>
+        <p class="section-lead">
+          Crafted by Gabriel (Gabby) and independent software engineers obsessed with input bandwidth and user ergonomics.
+        </p>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-accent-line"></div>
+          <div class="card-icon">👨‍💻</div>
+          <h3>The Maker's Story</h3>
+          <p>
+            Listen was conceived and built by Gabriel (Gabby)—a developer and writer tired of physical keyboard fatigue and the clumsy unreliability of existing speech tools. Every day, hours were lost stopping to correct typos, re-typing sentences, or waiting for bloated voice applications to respond. Gabriel engineered Listen to be the tool he needed himself: lightning fast, completely unobtrusive, and genuinely smart enough to understand natural speech rhythm.
+          </p>
         </div>
-        <div class="controls-row">
-          <button id="btn-toggle-dictation" class="btn btn-primary">
-            <span>🎙️ Start Dictating</span>
-          </button>
-          <button id="btn-copy" class="btn btn-secondary">📋 Copy Text</button>
-          <button id="btn-share" class="btn btn-secondary">📤 Send to Chat</button>
-          <button id="btn-clear" class="btn btn-secondary">Clear</button>
+
+        <div class="card">
+          <div class="card-accent-line"></div>
+          <div class="card-icon">🎯</div>
+          <h3>Our Mission & Philosophy</h3>
+          <p>
+            We believe that typing should never be the bottleneck of human intellect. The mechanical keyboard was invented in 1868—over 150 years ago. While computing hardware and AI have leaped forward exponentially, our primary interface for getting ideas into machines has remained practically unchanged. Listen exists to bridge that gap forever.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: What It's Meant For -->
+    <section class="content-section" id="what-its-for">
+      <div class="section-header">
+        <span class="section-tag">Purpose & Scope</span>
+        <h2 class="section-title">What Is Listen Meant For?</h2>
+        <p class="section-lead">
+          A seamless, universal voice input layer designed for thinkers, coders, writers, researchers, and builders.
+        </p>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-accent-line"></div>
+          <div class="card-icon">🚀</div>
+          <h3>Frictionless Thought Capture</h3>
+          <p>
+            Listen is built for high-velocity creation. When you are writing a long document, drafting an architectural design RFC, replying to urgent Slack messages, or jotting down ideas in your personal knowledge base, you shouldn't have to pause your stream of consciousness. Press your shortcut, speak continuously, and let Listen lay down your thoughts in real time.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-accent-line"></div>
+          <div class="card-icon">💻</div>
+          <h3>Universal Desktop Integration</h3>
+          <p>
+            Unlike voice apps that lock you into their own proprietary notepad or web window, Listen integrates directly with your operating system. It works transparently inside <strong>VS Code, Microsoft Word, Google Chrome, Slack, Notion, Windows Terminal, Obsidian, Discord, and Telegram</strong>. Wherever you can click a cursor, Listen can dictate.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Why It Was Built -->
+    <section class="content-section" id="why-built">
+      <div class="section-header">
+        <span class="section-tag">The Philosophy</span>
+        <h2 class="section-title">Why Listen Was Built</h2>
+        <p class="section-lead">
+          The fundamental flaws of traditional dictation tools—and how Listen solves them in writing.
+        </p>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-accent-line"></div>
+          <div class="card-icon">⌨️</div>
+          <h3>The 150 WPM vs 40 WPM Bottleneck</h3>
+          <p>
+            Human vocal cords and thought processes effortlessly produce 120 to 160 words per minute. Yet average typing speed hovers between 35 and 50 WPM. That means approximately 70% of your cognitive velocity is lost waiting for your fingers to hit mechanical switches. Ideas get lost, arguments lose their natural cadence, and mental stamina drains.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-accent-line"></div>
+          <div class="card-icon">🤖</div>
+          <h3>Why Legacy Speech Tools Failed</h3>
+          <p>
+            Traditional speech-to-text engines are rigid, unforgiving, and literal. When you say <em>"number one clean the room then step two buy milk"</em>, legacy tools awkwardly spell out <em>"number 1 clean the room then step 2 buy milk"</em>. They cannot distinguish when "one" is a digit or conversational English. They don't place question marks when you ask a question, they ignore spoken brackets, and they drop words if you pause for breath.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-accent-line"></div>
+          <div class="card-icon">👻</div>
+          <h3>The Problem with Window Bloat</h3>
+          <p>
+            Other dictation apps force you to open a heavy desktop window that steals your keyboard focus, interrupts your visual layout, and requires manual copy-pasting. Listen was built to be an invisible ghost: a borderless, organic fluid orb that hovers at your screen edge only when active, never stealing active cursor focus.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-accent-line"></div>
+          <div class="card-icon">🔒</div>
+          <h3>Developer-Managed Simplicity</h3>
+          <p>
+            We believe everyday users shouldn't have to navigate confusing cloud developer consoles, set up credit cards, or generate API keys just to dictate notes. Listen comes pre-configured and managed by developers out of the box. Install the setup wizard, select your preferred shortcut, and start dictating immediately.
+          </p>
         </div>
       </div>
 
-      <!-- Shortcut Customizer / Trigger in Browser -->
-      <div class="shortcut-widget" id="shortcut-widget" tabindex="0" title="Click to test or change shortcut keys">
-        <div>
-          <span style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Active Shortcut (Press these keys to toggle dictation):</span>
-          <div class="shortcut-keys" id="shortcut-display">
-            <kbd class="kbd">Ctrl</kbd>
-            <span style="color: var(--text-muted)">+</span>
-            <kbd class="kbd">Shift</kbd>
-            <span style="color: var(--text-muted)">+</span>
-            <kbd class="kbd">Space</kbd>
+      <div class="manifesto-box">
+        <blockquote>
+          "Typing is a mechanical tax on human thought. Listen eliminates the tax—giving you a direct neural link between your voice and your screen."
+        </blockquote>
+        <span class="manifesto-author">Listen Product Manifesto</span>
+      </div>
+    </section>
+
+    <!-- Section 4: How It Works (Explained in Writing) -->
+    <section class="content-section" id="how-it-works">
+      <div class="section-header">
+        <span class="section-tag">Technical Architecture</span>
+        <h2 class="section-title">How the Technology Works</h2>
+        <p class="section-lead">
+          A detailed architectural breakdown of the dual-intelligence pipeline and native OS integration.
+        </p>
+      </div>
+
+      <div class="tech-breakdown">
+        <div class="tech-steps">
+          <div class="tech-step-item">
+            <div class="tech-step-number">1</div>
+            <h4>Stage 1: Acoustic Whisper Capture</h4>
+            <p>
+              When you press your global shortcut, Listen activates high-clarity 16kHz mono audio recording using lightweight Opus compression. The stream is sent to Groq's LPUs running Whisper Large-v3-Turbo, capturing every syllable and word with acoustic precision in ~300ms.
+            </p>
+          </div>
+
+          <div class="tech-step-item">
+            <div class="tech-step-number">2</div>
+            <h4>Stage 2: Contextual LLM Reasoning</h4>
+            <p>
+              Raw speech is immediately piped to an ultra-fast LLM context model. The model analyzes grammatical structure, formats lists (e.g. converting <em>"number one"</em> into <code>1.</code>), inserts commas and question marks, capitalizes names, and formats brackets in ~150ms.
+            </p>
+          </div>
+
+          <div class="tech-step-item">
+            <div class="tech-step-number">3</div>
+            <h4>Stage 3: Zero-Focus Fluid Orb</h4>
+            <p>
+              During speech, a borderless, transparent floating orb animates fluidly above your Windows taskbar. Engineered with non-focusable OS flags, it stays on top visually without ever stealing cursor focus away from your active software.
+            </p>
+          </div>
+
+          <div class="tech-step-item">
+            <div class="tech-step-number">4</div>
+            <h4>Stage 4: Native Keystroke Injection</h4>
+            <p>
+              Once formatted, Listen writes the polished transcription to the system clipboard and immediately executes native OS keystroke simulation to paste the text directly into the exact coordinates of your blinking cursor.
+            </p>
           </div>
         </div>
-        <span style="font-size: 12px; color: #818cf8;">Click to change keys</span>
-      </div>
 
-      <!-- Scratchpad where text pastes -->
-      <textarea id="scratchpad" class="scratchpad" placeholder="Your spoken words will appear here automatically when you speak into your microphone..."></textarea>
-      
-      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted);">
-        <span>STT Provider: <strong>Groq Whisper (whisper-large-v3-turbo)</strong></span>
-        <span id="demo-status">Status: Ready</span>
-      </div>
-    </section>
-
-    <!-- Why I Built Listen: The Philosophy & Story -->
-    <section class="story-section">
-      <div class="story-header">
-        <span class="story-tag">The Story & Philosophy</span>
-        <h2>Why I Built Listen</h2>
-        <p>A personal journey from keyboard fatigue and broken speech tools to frictionless thought-to-text.</p>
-      </div>
-
-      <div class="story-grid">
-        <div class="story-card">
-          <div class="story-icon">⚡</div>
-          <h3>Thinking at 150 WPM vs. Typing at 40 WPM</h3>
-          <p>
-            The human mind thinks and speaks at 150+ words per minute. But when we type, our fingers bottleneck us down to 40 or 50 words per minute. Brilliant creative flow evaporates in the split-second it takes to reach for the backspace key, correct typos, or wrestle with keyboard fatigue. I built Listen because our tools should keep up with our minds—not slow them down.
+        <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 10px;">
+          <h4 style="color: #38bdf8; font-size: 15px;">Extended 1-Hour Continuous Dictation</h4>
+          <p style="font-size: 13.5px; color: #94a3b8;">
+            By streaming 32kbps mono Opus audio with 1-second chunks, an entire 60-minute dictation session consumes only ~14.4 MB of bandwidth—comfortably below the 25 MB payload ceiling. You can talk for an hour without losing a single thought.
           </p>
-        </div>
-
-        <div class="story-card">
-          <div class="story-icon">🧠</div>
-          <h3>Why Traditional Voice Dictation Failed</h3>
-          <p>
-            Every existing dictation tool I tried felt rigid, robotic, and dumb. If you say "number one clean the room", they spell out "number 1" in awkward spots instead of creating a numbered list. They have no idea whether "one" is a digit or a word in conversation. They cut you off if you pause for breath, and they ignore natural grammar and brackets. Listen solves this with a real two-stage intelligence engine: acoustic capture powered by Whisper, fused with an ultra-fast LLM context brain that understands human intent.
-          </p>
-        </div>
-
-        <div class="story-card">
-          <div class="story-icon">🔮</div>
-          <h3>The Invisible Companion (Zero Focus Stealing)</h3>
-          <p>
-            I didn't want another bloated app window stealing focus from my code editor, browser, or chat window. Listen was designed to feel like an invisible superpower: a glowing neon fluid orb that appears silently at the bottom of your screen while you speak, and melts away the moment you stop. Your words are pasted straight into whatever app your cursor was already focused on.
-          </p>
-        </div>
-
-        <div class="story-card">
-          <div class="story-icon">⏱️</div>
-          <h3>Deep Listening for Extended Focus</h3>
-          <p>
-            Whether dictating a quick 3-second reply in Slack or speaking for an entire hour to draft a book chapter, technical design doc, or essay, Listen does not lose your train of thought. It records with lightweight Opus compression and passes long audio streams seamlessly, understanding when to place periods, commas, question marks, and paragraphs without manual intervention.
-          </p>
-        </div>
-      </div>
-
-      <div class="manifesto-quote">
-        <blockquote>
-          "Typing is a mechanical barrier between human cognition and digital expression. Listen removes the barrier, letting your voice shape your thoughts into reality."
-        </blockquote>
-        <span class="manifesto-author">Listen Dictation Manifesto</span>
-        <div style="display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; justify-content: center;">
-          <a href="https://github.com/Gabby-design/listen/releases" target="_blank" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
-            <span>⬇️ Download Windows Setup (v2.1.0)</span>
-          </a>
-          <button id="btn-install-pwa-bottom" class="btn btn-secondary">
-            <span>📲 Install App on Phone</span>
-          </button>
         </div>
       </div>
     </section>
 
-    <!-- Features Overview -->
-    <section class="features-grid">
-      <div class="feature-item">
-        <div class="feature-icon">✨</div>
-        <div>
-          <h4>Zero Focus Stealing</h4>
-          <p>Frameless, non-focusable floating pill indicator stays on top without stealing your active cursor or window focus.</p>
-        </div>
+    <!-- Download Section -->
+    <section class="content-section" style="text-align: center; align-items: center;">
+      <div class="section-header" style="align-items: center;">
+        <span class="section-tag">Get Started</span>
+        <h2 class="section-title">Experience Listen on Your Machine</h2>
+        <p class="section-lead">
+          Download the official Windows installer or install the Progressive Web App on mobile.
+        </p>
       </div>
 
-      <div class="feature-item">
-        <div class="feature-icon">⚡</div>
-        <div>
-          <h4>~300ms Groq Whisper</h4>
-          <p>Ultra-low-latency transcription powered by Groq's LPUs delivering spoken text in milliseconds.</p>
-        </div>
+      <div class="cta-group" style="margin-top: 12px;">
+        <a href="https://github.com/Gabby-design/listen/releases" target="_blank" class="btn btn-primary" style="padding: 14px 28px; font-size: 15.5px;">
+          <span>⬇️ Download Listen Setup v2.1.1 (.exe)</span>
+        </a>
+        <button id="btn-install-pwa-bottom" class="btn btn-secondary" style="padding: 14px 24px; font-size: 15px;">
+          <span>📲 Install Mobile App</span>
+        </button>
       </div>
 
-      <div class="feature-item">
-        <div class="feature-icon">📋</div>
-        <div>
-          <h4>Automated Paste Injection</h4>
-          <p>Native keystroke automation pastes transcribed text straight into Notepad, VSCode, Chrome, Word, or Slack.</p>
-        </div>
-      </div>
-
-      <div class="feature-item">
-        <div class="feature-icon">🎛️</div>
-        <div>
-          <h4>Custom Hotkey Recorder</h4>
-          <p>Rebind your global shortcut to any combination (Ctrl+Shift+Space, Alt+D, etc.) with real-time capture.</p>
-        </div>
-      </div>
+      <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 14px;">
+        System Requirements: Windows 10/11 (64-bit) &bull; Working Microphone &bull; Internet Connection
+      </p>
     </section>
 
+    <!-- Footer -->
     <footer>
-      <p>Listen Desktop Dictation &copy; 2026. Open source on <a href="https://github.com/Gabby-design/listen" target="_blank">GitHub</a>.</p>
+      <p>Listen Dictation &copy; 2026. Built by Gabriel (Gabby) & the Listen Engineering Team.</p>
+      <p>Open source repository on <a href="https://github.com/Gabby-design/listen" target="_blank">GitHub</a>.</p>
     </footer>
-  </div>
+  </main>
 
   <script>
-    // Live Browser Dictation Engine with Pinterest Fluid Orb
-    const orbCanvas = document.getElementById('orbCanvas');
-    const orbBox = document.getElementById('orb-box');
-    const liveOrbBtn = document.getElementById('live-orb-btn');
-    const demoOrbText = document.getElementById('demo-orb-text');
-    const btnToggle = document.getElementById('btn-toggle-dictation');
-    const btnClear = document.getElementById('btn-clear');
-    const scratchpad = document.getElementById('scratchpad');
-    const demoStatus = document.getElementById('demo-status');
-    const shortcutWidget = document.getElementById('shortcut-widget');
-    const shortcutDisplay = document.getElementById('shortcut-display');
-
-    const ctx = orbCanvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    orbCanvas.width = 96 * dpr;
-    orbCanvas.height = 96 * dpr;
-    ctx.scale(dpr, dpr);
-
-    const W = 96, H = 96, CX = 48, CY = 48, BASE_R = 28;
-    let isRecording = false;
-    let orbState = 'idle'; // 'idle' | 'listening' | 'processing'
-    let time = 0;
-    let voiceEnergy = 0;
-    let recognition = null;
-    let mediaStream = null;
-    let audioContext = null;
-    let analyser = null;
-    let dataArray = null;
-
-    // Fluid curve drawer
-    function drawContour(points, color, lineWidth, shadowColor, shadowBlur) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 0; i < points.length; i++) {
-        const p0 = points[(i - 1 + points.length) % points.length];
-        const p1 = points[i];
-        const p2 = points[(i + 1) % points.length];
-        const p3 = points[(i + 2) % points.length];
-        const cp1x = p1.x + (p2.x - p0.x) / 6;
-        const cp1y = p1.y + (p2.y - p0.y) / 6;
-        const cp2x = p2.x - (p3.x - p1.x) / 6;
-        const cp2y = p2.y - (p3.y - p1.y) / 6;
-        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-      }
-      ctx.closePath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth;
-      ctx.shadowColor = shadowColor;
-      ctx.shadowBlur = shadowBlur;
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // Render loop at 60 FPS
-    function renderOrb() {
-      ctx.clearRect(0, 0, W, H);
-
-      if (analyser && dataArray && orbState === 'listening') {
-        analyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-        const avg = sum / dataArray.length;
-        const target = Math.min(1.0, (avg / 128));
-        voiceEnergy += (target - voiceEnergy) * 0.25;
-      } else {
-        voiceEnergy *= 0.9;
-      }
-
-      const speed = orbState === 'processing' ? 0.08 : (orbState === 'listening' ? 0.045 : 0.02);
-      time += speed;
-
-      const primaryGlow = orbState === 'processing' ? 'rgba(96, 165, 250, 0.95)' : 'rgba(56, 189, 248, 0.9)';
-      const secondaryGlow = 'rgba(96, 165, 250, 0.7)';
-      const shadowBlurVal = orbState === 'listening' ? (14 + voiceEnergy * 14) : 8;
-
-      // Core glow
-      const coreGrad = ctx.createRadialGradient(CX, CY, 4, CX, CY, BASE_R + 6);
-      coreGrad.addColorStop(0, 'rgba(8, 12, 28, 0.85)');
-      coreGrad.addColorStop(0.7, orbState === 'listening' ? 'rgba(14, 165, 233, 0.35)' : 'rgba(14, 165, 233, 0.15)');
-      coreGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.save();
-      ctx.fillStyle = coreGrad;
-      ctx.beginPath();
-      ctx.arc(CX, CY, BASE_R + 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-
-      // Contours
-      const numLayers = 4;
-      const numSteps = 48;
-      for (let l = 0; l < numLayers; l++) {
-        const layerOffset = l * 1.6;
-        const layerRadius = BASE_R - l * 3.5;
-        const waveAmp = (orbState === 'listening' ? (3.5 + voiceEnergy * 8.5) : 2.0) * (1 - l * 0.18);
-        const points = [];
-        for (let i = 0; i < numSteps; i++) {
-          const theta = (i / numSteps) * Math.PI * 2;
-          const w1 = Math.sin(theta * 3 + time * 1.5 + layerOffset);
-          const w2 = Math.cos(theta * 2 - time * 2.0 + layerOffset);
-          const w3 = Math.sin(theta * 5 + time * 3.2);
-          const displacement = (w1 * 0.55 + w2 * 0.35 + w3 * 0.1) * waveAmp;
-          const r = layerRadius + displacement;
-          points.push({ x: CX + Math.cos(theta) * r, y: CY + Math.sin(theta) * r });
-        }
-
-        if (l === 0) {
-          drawContour(points, primaryGlow, 2.2, '#38bdf8', shadowBlurVal);
-        } else if (l === 1) {
-          drawContour(points, secondaryGlow, 1.8, '#38bdf8', shadowBlurVal * 0.7);
-        } else {
-          drawContour(points, 'rgba(129, 140, 248, 0.45)', 1.2, '#38bdf8', 6);
-        }
-      }
-
-      // Swirling crescent highlight
-      ctx.save();
-      ctx.beginPath();
-      const crescentAngle = time * 2.2;
-      const hx = CX + Math.cos(crescentAngle) * (BASE_R * 0.45);
-      const hy = CY + Math.sin(crescentAngle) * (BASE_R * 0.45);
-      ctx.arc(hx, hy, 7 + voiceEnergy * 4, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
-      ctx.shadowColor = '#ffffff';
-      ctx.shadowBlur = 8;
-      ctx.fill();
-      ctx.restore();
-
-      requestAnimationFrame(renderOrb);
-    }
-    renderOrb();
-
-    // Audio setup
-    function setupAudio(stream) {
-      try {
-        if (!audioContext) {
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioContext.state === 'suspended') {
-          audioContext.resume();
-        }
-        const source = audioContext.createMediaStreamSource(stream);
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 64;
-        analyser.smoothingTimeConstant = 0.8;
-        source.connect(analyser);
-        dataArray = new Uint8Array(analyser.frequencyBinCount);
-      } catch (err) {
-        console.warn('Audio analyser error:', err);
-      }
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    async function startDictation() {
-      try {
-        isRecording = true;
-        orbState = 'listening';
-        orbBox.className = 'orb-canvas-box';
-        demoOrbText.textContent = 'Listening... Speak now';
-        btnToggle.className = 'btn btn-primary recording';
-        btnToggle.innerHTML = '<span>⏹️ Stop Dictating</span>';
-        demoStatus.textContent = 'Status: Listening...';
-
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          setupAudio(mediaStream);
-        }
-
-        if (SpeechRecognition) {
-          recognition = new SpeechRecognition();
-          recognition.continuous = true;
-          recognition.interimResults = true;
-          recognition.lang = 'en-US';
-
-          const baseText = scratchpad.value;
-
-          recognition.onresult = (event) => {
-            let finalTranscript = '';
-            let interimTranscript = '';
-            for (let i = 0; i < event.results.length; ++i) {
-              const res = event.results[i];
-              if (res.isFinal) {
-                finalTranscript += res[0].transcript.trim() + ' ';
-              } else {
-                interimTranscript += res[0].transcript.trim() + ' ';
-              }
-            }
-            const currentSpeech = (finalTranscript + interimTranscript).trim();
-            if (currentSpeech) {
-              scratchpad.value = (baseText ? baseText.trim() + ' ' : '') + currentSpeech;
-              scratchpad.scrollTop = scratchpad.scrollHeight;
-            }
-          };
-
-          recognition.onerror = (e) => {
-            console.warn('Speech error:', e.error);
-          };
-
-          recognition.onend = () => {
-            if (isRecording) {
-              try { recognition.start(); } catch (e) {}
-            }
-          };
-
-          recognition.start();
-        }
-      } catch (err) {
-        console.error('Mic error:', err);
-        stopDictation();
-        alert('Microphone access is required for dictation.');
-      }
-    }
-
-    function formatTranscription(rawText) {
-      if (!rawText) return '';
-      let text = rawText.trim();
-      const spokenPunctuation = [
-        { regex: /\b(period|full stop)\b/gi, rep: '.' },
-        { regex: /\b(comma)\b/gi, rep: ',' },
-        { regex: /\b(question mark)\b/gi, rep: '?' },
-        { regex: /\b(exclamation mark|exclamation point)\b/gi, rep: '!' },
-        { regex: /\b(colon)\b/gi, rep: ':' },
-        { regex: /\b(semicolon)\b/gi, rep: ';' },
-        { regex: /\b(open bracket|open parenthesis|open paren)\b/gi, rep: '(' },
-        { regex: /\b(close bracket|close parenthesis|close paren)\b/gi, rep: ')' },
-        { regex: /\b(open quote)\b/gi, rep: '"' },
-        { regex: /\b(close quote)\b/gi, rep: '"' },
-        { regex: /\b(new line)\b/gi, rep: '\n' },
-        { regex: /\b(new paragraph)\b/gi, rep: '\n\n' }
-      ];
-      for (const { regex, rep } of spokenPunctuation) {
-        text = text.replace(regex, rep);
-      }
-      text = text.replace(/\s+([,.:;?!%])/g, '$1');
-      text = text.replace(/([,.:;?!])([A-Za-z0-9])/g, '$1 $2');
-      text = text.replace(/\(\s+/g, '(');
-      text = text.replace(/\s+\)/g, ')');
-      text = text.replace(/([A-Za-z0-9])\(/g, '$1 (');
-      text = text.replace(/\)([A-Za-z0-9])/g, ') $1');
-      text = text.replace(/[ \t]+/g, ' ');
-      text = text.charAt(0).toUpperCase() + text.slice(1);
-      text = text.replace(/([.?!]\s+)([a-z])/g, (_match, p1, p2) => p1 + p2.toUpperCase());
-      text = text.replace(/(\n+)([a-z])/g, (_match, p1, p2) => p1 + p2.toUpperCase());
-      text = text.replace(/\b(i)\b/g, 'I');
-      text = text.replace(/\bi'([a-z]+)/gi, (_match, suffix) => "I'" + suffix.toLowerCase());
-      return text.trim();
-    }
-
-    function stopDictation() {
-      isRecording = false;
-      orbState = 'processing';
-      orbBox.className = 'orb-canvas-box processing';
-      demoOrbText.textContent = 'Transcribing...';
-      demoStatus.textContent = 'Status: Finalizing text...';
-
-      if (recognition) {
-        try { recognition.stop(); } catch (e) {}
-      }
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(t => t.stop());
-        mediaStream = null;
-      }
-
-      // Apply intelligent formatting: punctuation, capitalization, brackets
-      if (scratchpad.value) {
-        scratchpad.value = formatTranscription(scratchpad.value);
-      }
-
-      setTimeout(() => {
-        orbState = 'idle';
-        orbBox.className = 'orb-canvas-box';
-        demoOrbText.textContent = '🎙️ Click orb or press shortcut to dictate';
-        btnToggle.className = 'btn btn-primary';
-        btnToggle.innerHTML = '<span>🎙️ Start Dictating</span>';
-        demoStatus.textContent = 'Status: Ready';
-      }, 500);
-    }
-
-    function toggleDictation() {
-      if (!isRecording) startDictation();
-      else stopDictation();
-    }
-
-    btnToggle.addEventListener('click', toggleDictation);
-    liveOrbBtn.addEventListener('click', toggleDictation);
-
-    const btnCopy = document.getElementById('btn-copy');
-    if (btnCopy) {
-      btnCopy.addEventListener('click', async () => {
-        if (!scratchpad.value.trim()) return;
-        await navigator.clipboard.writeText(scratchpad.value);
-        const origText = btnCopy.textContent;
-        btnCopy.textContent = '✓ Copied!';
-        setTimeout(() => { btnCopy.textContent = origText; }, 1800);
-      });
-    }
-
-    const btnShare = document.getElementById('btn-share');
-    if (btnShare) {
-      btnShare.addEventListener('click', async () => {
-        const text = scratchpad.value.trim();
-        if (!text) {
-          alert('Speak or type some text first before sending to chat!');
-          return;
-        }
-        if (navigator.share) {
-          try {
-            await navigator.share({
-              title: 'Listen Dictation',
-              text: text
-            });
-          } catch (e) {}
-        } else {
-          await navigator.clipboard.writeText(text);
-          btnShare.textContent = '✓ Copied to Paste in Chat!';
-          setTimeout(() => { btnShare.textContent = '📤 Send to Chat'; }, 2000);
-        }
-      });
-    }
-
-    btnClear.addEventListener('click', () => {
-      scratchpad.value = '';
-      demoStatus.textContent = 'Status: Cleared';
-      setTimeout(() => { demoStatus.textContent = 'Status: Ready'; }, 1000);
-    });
-
-    // Custom in-browser shortcut handling
-    let customKey = 'Space';
-    let requireCtrl = true;
-    let requireShift = true;
-    let isConfiguring = false;
-
-    shortcutWidget.addEventListener('click', () => {
-      isConfiguring = true;
-      shortcutWidget.classList.add('focus');
-      shortcutDisplay.innerHTML = '<span style="color:#818cf8; font-weight:600;">Press your shortcut keys now...</span>';
-    });
-
-    window.addEventListener('keydown', (e) => {
-      if (isConfiguring) {
-        e.preventDefault();
-        if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
-        requireCtrl = e.ctrlKey || e.metaKey;
-        requireShift = e.shiftKey;
-        customKey = e.code === 'Space' ? 'Space' : e.key.toUpperCase();
-        isConfiguring = false;
-        shortcutWidget.classList.remove('focus');
-
-        let html = '';
-        if (requireCtrl) html += '<kbd class="kbd">Ctrl</kbd><span style="color:var(--text-muted)">+</span>';
-        if (requireShift) html += '<kbd class="kbd">Shift</kbd><span style="color:var(--text-muted)">+</span>';
-        html += `<kbd class="kbd">${customKey}</kbd>`;
-        shortcutDisplay.innerHTML = html;
-        return;
-      }
-
-      const ctrlMatch = requireCtrl ? (e.ctrlKey || e.metaKey) : true;
-      const shiftMatch = requireShift ? e.shiftKey : true;
-      const keyMatch = customKey === 'Space' ? (e.code === 'Space') : (e.key.toUpperCase() === customKey);
-
-      if (ctrlMatch && shiftMatch && keyMatch) {
-        e.preventDefault();
-        toggleDictation();
-      }
-    });
-
     // PWA Service Worker & Install Prompt handling
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((e) => console.log('SW registration error:', e));
@@ -991,13 +700,14 @@
 
     let deferredPrompt = null;
     const btnInstall = document.getElementById('btn-install-pwa');
+    const btnInstallBottom = document.getElementById('btn-install-pwa-bottom');
+
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
       if (btnInstall) btnInstall.style.display = 'inline-flex';
+      if (btnInstallBottom) btnInstallBottom.style.display = 'inline-flex';
     });
-
-    const btnInstallBottom = document.getElementById('btn-install-pwa-bottom');
 
     async function triggerPwaInstall() {
       if (!deferredPrompt) {

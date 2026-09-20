@@ -5,15 +5,15 @@ const container = document.getElementById('orb-wrapper');
 
 // Hi-DPI scaling
 const dpr = window.devicePixelRatio || 1;
-canvas.width = 96 * dpr;
-canvas.height = 96 * dpr;
-ctx.scale(dpr, dpr);
-
-const W = 96;
-const H = 96;
-const CX = W / 2;
-const CY = H / 2;
+const W = 140;
+const H = 140;
+const CX = W / 2; // 70
+const CY = H / 2; // 70
 const BASE_RADIUS = 28;
+
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
 
 // Animation & State
 let currentState = 'idle'; // 'listening' | 'processing' | 'error' | 'done'
@@ -198,10 +198,9 @@ async function startRecording() {
     if (!mediaStream || !mediaStream.active) {
       mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          channelCount: 1, // Mono for voice clarity & optimal file size
-          sampleRate: 16000, // Native Whisper acoustic model sample rate
-          echoCancellation: true,
-          noiseSuppression: true,
+          channelCount: 1,
+          echoCancellation: false, // Prevent cutting off speaker's voice
+          noiseSuppression: false, // Prevent muffling soft consonants like 'th' in 'there'
           autoGainControl: true
         }
       });
@@ -218,7 +217,7 @@ async function startRecording() {
 
     const options = {
       mimeType: mimeType || undefined,
-      audioBitsPerSecond: 32000 // 32kbps mono Opus = ~14.4MB per hour, fits comfortably under 25MB limit
+      audioBitsPerSecond: 128000 // Studio quality 128kbps Opus for pristine consonant and phonetic clarity
     };
     mediaRecorder = new MediaRecorder(mediaStream, options);
 

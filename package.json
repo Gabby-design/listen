@@ -1,6 +1,6 @@
 {
   "name": "listen-dictation",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Production-ready desktop voice dictation app for Windows & macOS",
   "main": "main.js",
   "scripts": {

@@ -64,9 +64,9 @@ function createOverlayWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
 
-  const orbSize = 96;
+  const orbSize = 140;
   const x = Math.round((screenWidth - orbSize) / 2);
-  const y = screenHeight - orbSize - 28; // Bottom-center floating above taskbar/dock
+  const y = screenHeight - orbSize - 16; // Bottom-center floating seamlessly above taskbar
 
   overlayWindow = new BrowserWindow({
     width: orbSize,
@@ -75,6 +75,8 @@ function createOverlayWindow() {
     y,
     frame: false,
     transparent: true,
+    hasShadow: false,
+    roundedCorners: false,
     alwaysOnTop: true,
     skipTaskbar: true,
     focusable: false, // CRITICAL: Never steal focus from active window
@@ -357,24 +359,22 @@ async function enhanceTranscriptionWithAI(rawText) {
     ? 'https://api.groq.com/openai/v1/chat/completions'
     : 'https://api.openai.com/v1/chat/completions';
 
-  const systemPrompt = `You are Listen AI, an intelligent real-time dictation engine.
-Transform the raw, stream-of-consciousness speech transcription into polished, natural text while preserving the speaker's exact intended words and meaning.
+  const systemPrompt = `You are Listen AI, an exact verbatim dictation formatter.
 
-RULES:
-1. Contextual Numbers & Lists:
-   - When the speaker says "number one [item] number two [item]" or "step one ... step two", format them as clear lists (e.g. "1. [Item]\\n2. [Item]").
-   - In ordinary conversational sentences ("I have one sister", "around two or three hours", "one day"), use natural words or digits as appropriate in standard English.
-   - For currencies, percentages, dates, and measurements, format naturally (e.g. "$50", "25%", "March 15th", "10 km").
-2. Intelligent Punctuation & Capitalization:
-   - Accurately punctuate with commas, periods, question marks, exclamation marks, and colons based on grammar and sentence flow.
-   - Capitalize the start of sentences, proper nouns, acronyms, and the pronoun "I".
-3. Spoken Commands:
-   - Spoken punctuation commands ("comma", "period", "full stop", "question mark", "exclamation mark", "colon", "semicolon", "new line", "new paragraph") must be converted into their actual punctuation marks and paragraph line breaks.
-4. Brackets, Quotes, and Parentheses:
-   - When the speaker indicates a parenthetical aside or says "open bracket / in bracket / quote", wrap with appropriate brackets (parentheses) or quotation marks.
-5. Strict Output:
-   - Return ONLY the final formatted text.
-   - Do NOT add any preamble, conversational replies, explanations, warnings, or markdown code blocks (like \`\`\`).`;
+CRITICAL VERBATIM RULES:
+1. PRESERVE EVERY SINGLE WORD EXACTLY AS SPOKEN.
+   - You are strictly forbidden from substituting, replacing, rephrasing, omitting, or inventing words.
+   - Never change a word because you think another word makes more sense in context. If the user said "there", keep "there" — NEVER change it to "today" or any other word.
+   - Do not translate, do not "fix" grammar by changing vocabulary. Preserve the speaker's exact vocabulary.
+2. YOUR ONLY ALLOWED ACTIONS:
+   - Capitalization: Capitalize the first letter of sentences, acronyms, and the standalone pronoun "I".
+   - Punctuation: Insert natural commas, periods, question marks, and exclamation marks where appropriate based on sentence flow.
+   - Spoken Punctuation Commands: Convert spoken punctuation words into punctuation symbols ("comma" -> ",", "period" or "full stop" -> ".", "question mark" -> "?", "exclamation mark" -> "!", "colon" -> ":", "new line" -> "\\n", "new paragraph" -> "\\n\\n").
+   - Spoken Lists: When the speaker says "number one [item]" or "step one [item]", format as a clean numbered point (e.g. "1. [Item]" or "Step 1: [Item]").
+   - Parentheses & Quotes: Wrap parenthetical thoughts or "in brackets" with "(...)".
+3. STRICT OUTPUT:
+   - Output ONLY the final formatted text.
+   - Do NOT add any preamble, explanation, notes, or markdown code fences (\`\`\`).`;
 
   try {
     const controller = new AbortController();
@@ -392,7 +392,7 @@ RULES:
           { role: 'system', content: systemPrompt },
           { role: 'user', content: rawText }
         ],
-        temperature: 0.1,
+        temperature: 0.0,
         max_tokens: 4096
       }),
       signal: controller.signal
@@ -424,7 +424,7 @@ RULES:
 async function transcribeAudio(buffer, mimeType) {
   const provider = config.provider || 'groq';
   const apiKey = config.apiKey ? config.apiKey.trim() : '';
-  const model = config.model || (provider === 'groq' ? 'whisper-large-v3-turbo' : 'whisper-1');
+  const model = config.model || (provider === 'groq' ? 'whisper-large-v3' : 'whisper-1');
 
   if (!apiKey) {
     throw new Error('No API key configured');
@@ -441,7 +441,6 @@ async function transcribeAudio(buffer, mimeType) {
   formData.append('model', model);
   formData.append('response_format', 'json');
   formData.append('temperature', '0'); // Deterministic, zero hallucination
-  formData.append('prompt', 'Hello, world! Please transcribe every spoken word accurately with proper punctuation, commas, periods, question marks, capitalization, and brackets where appropriate.');
 
   if (config.language && config.language !== 'auto') {
     formData.append('language', config.language);

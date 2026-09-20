@@ -74,65 +74,17 @@
         </div>
       </div>
 
-      <!-- Section 3: Speech-to-Text Provider -->
-      <div class="form-section">
-        <label class="section-title">Speech-to-Text Provider</label>
-        
-        <div class="provider-cards">
-          <label class="provider-card" id="card-groq">
-            <input type="radio" name="provider" value="groq" id="provider-groq">
-            <div class="card-content">
-              <span class="provider-name">Groq Cloud</span>
-              <span class="provider-badge">Ultra-Fast (~300ms)</span>
-            </div>
-          </label>
-
-          <label class="provider-card" id="card-openai">
-            <input type="radio" name="provider" value="openai" id="provider-openai">
-            <div class="card-content">
-              <span class="provider-name">OpenAI</span>
-              <span class="provider-badge">Whisper API</span>
-            </div>
-          </label>
-        </div>
-
-        <!-- Model Selection -->
-        <div class="input-group">
-          <label for="model-select">Transcription Model</label>
-          <select id="model-select" class="select-input">
-            <!-- Populated dynamically based on provider -->
-          </select>
-        </div>
-
-        <!-- API Key Input -->
-        <div class="input-group">
-          <div class="label-with-action">
-            <label for="api-key-input">API Key</label>
-            <button type="button" id="btn-test-key" class="text-button">Test Connection</button>
-          </div>
-          <div class="password-wrapper">
-            <input type="password" id="api-key-input" placeholder="Paste your API key here (gsk_... or sk-...)">
-            <button type="button" id="toggle-key-visibility" class="icon-toggle" title="Show/Hide Key">
-              <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
-          </div>
-          <div id="test-key-status" class="status-indicator"></div>
-          <p class="field-hint" id="api-hint">
-            Get your Groq API key at <a href="#" id="link-provider-console">console.groq.com/keys</a>
-          </p>
-        </div>
-      </div>
-
-      <!-- Section 4: Advanced Options -->
+      <!-- Section 3: Advanced Options -->
       <div class="form-section">
         <label class="section-title">Paste & Injection Timing</label>
         <div class="input-group inline">
           <label for="paste-delay-input">Paste delay after transcription (ms)</label>
           <input type="number" id="paste-delay-input" min="20" max="1000" step="10" value="80" class="number-input">
         </div>
+      </div>
+
+      <div class="developer-note">
+        🔒 Speech & AI services are managed and pre-configured. No API key configuration required.
       </div>
     </main>
 

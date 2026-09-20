@@ -5,7 +5,7 @@ const { app } = require('electron');
 const DEFAULT_CONFIG = {
   provider: 'groq', // 'groq' | 'openai'
   apiKey: process.env.GROQ_API_KEY || '',
-  model: 'whisper-large-v3-turbo', // 'whisper-large-v3-turbo' | 'whisper-1'
+  model: 'whisper-large-v3', // 'whisper-large-v3' | 'whisper-1'
   shortcut: 'CommandOrControl+Shift+Space',
   language: 'en',
   pasteDelayMs: 80,
