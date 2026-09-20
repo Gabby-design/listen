@@ -27,7 +27,54 @@
 
     <!-- Main Form -->
     <main class="settings-body">
-      <!-- Section 1: Speech-to-Text Provider -->
+      <!-- First-Launch Welcome & Shortcut Setup Banner -->
+      <div id="first-launch-banner" class="first-launch-banner" style="display: none;">
+        <div class="banner-badge">🚀 Setup & Onboarding</div>
+        <h2>Choose Your Global Shortcut</h2>
+        <p>Before you begin, choose the shortcut key combination you want to press to start and stop dictation from any application on your machine.</p>
+      </div>
+
+      <!-- Section 1: Global Shortcut (Prominent for easy setup) -->
+      <div class="form-section" id="section-shortcut">
+        <label class="section-title">Global Dictation Shortcut</label>
+        <p class="section-desc">Press this combination from any application to start/stop dictation.</p>
+        
+        <div class="shortcut-recorder" id="shortcut-recorder-box" tabindex="0">
+          <div class="shortcut-keys" id="shortcut-badges">
+            <!-- Badges rendered by JS -->
+          </div>
+          <span class="recorder-hint" id="recorder-hint">Click to change shortcut</span>
+        </div>
+
+        <div class="preset-chips">
+          <span class="preset-label">Presets:</span>
+          <button type="button" class="preset-chip" data-shortcut="CommandOrControl+Shift+Space">Ctrl+Shift+Space</button>
+          <button type="button" class="preset-chip" data-shortcut="CommandOrControl+Space">Ctrl+Space</button>
+          <button type="button" class="preset-chip" data-shortcut="Alt+Space">Alt+Space</button>
+          <button type="button" class="preset-chip" data-shortcut="CommandOrControl+Shift+D">Ctrl+Shift+D</button>
+        </div>
+
+        <div class="shortcut-actions">
+          <button type="button" id="btn-test-pill" class="btn btn-pill-trigger">🎙️ Test Floating Orb Now</button>
+          <button type="button" id="btn-reset-shortcut" class="text-button">Reset to Default (Ctrl+Shift+Space)</button>
+        </div>
+      </div>
+
+      <!-- Section 2: AI Context Engine -->
+      <div class="form-section">
+        <div class="section-row-toggle">
+          <div>
+            <label class="section-title">AI Context Engine (Groq LLM)</label>
+            <p class="section-desc">Context-aware formatting: turns "number one" into numbered lists ("1."), handles spoken numbers vs digits, natural commas, periods, capitalization, and brackets.</p>
+          </div>
+          <label class="switch-toggle">
+            <input type="checkbox" id="ai-intelligence-toggle" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Section 3: Speech-to-Text Provider -->
       <div class="form-section">
         <label class="section-title">Speech-to-Text Provider</label>
         
@@ -79,25 +126,7 @@
         </div>
       </div>
 
-      <!-- Section 2: Global Shortcut -->
-      <div class="form-section">
-        <label class="section-title">Global Dictation Shortcut</label>
-        <p class="section-desc">Press this combination from any application to start/stop dictation.</p>
-        
-        <div class="shortcut-recorder" id="shortcut-recorder-box" tabindex="0">
-          <div class="shortcut-keys" id="shortcut-badges">
-            <!-- Badges rendered by JS -->
-          </div>
-          <span class="recorder-hint" id="recorder-hint">Click to change shortcut</span>
-        </div>
-
-        <div class="shortcut-actions">
-          <button type="button" id="btn-test-pill" class="btn btn-pill-trigger">🎙️ Toggle Floating Pill Now</button>
-          <button type="button" id="btn-reset-shortcut" class="text-button">Reset to Default (Ctrl+Shift+Space)</button>
-        </div>
-      </div>
-
-      <!-- Section 3: Advanced Options -->
+      <!-- Section 4: Advanced Options -->
       <div class="form-section">
         <label class="section-title">Paste & Injection Timing</label>
         <div class="input-group inline">
@@ -113,6 +142,9 @@
       <div class="action-buttons">
         <button type="button" id="btn-cancel" class="btn btn-secondary">Close</button>
         <button type="button" id="btn-save" class="btn btn-primary">Save Changes</button>
+        <button type="button" id="btn-finish-onboarding" class="btn btn-primary btn-onboard" style="display: none;">
+          ✨ Save Shortcut & Start Dictating
+        </button>
       </div>
     </footer>
   </div>

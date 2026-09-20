@@ -276,84 +276,125 @@
       border-color: var(--accent);
     }
 
-    /* Desktop Installation Section */
-    .install-section {
+    /* Why I Built Listen - Story & Philosophy */
+    .story-section {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 28px;
+      margin-top: 10px;
     }
 
-    .section-headline {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
-    .install-steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-    }
-
-    .step-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
+    .story-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-    .step-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: white;
-      font-weight: 700;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .step-card h3 {
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    .step-card p {
-      font-size: 13px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    .code-box {
-      background: #090a10;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px 12px;
-      font-family: 'Consolas', 'Courier New', monospace;
-      font-size: 12.5px;
-      color: #38bdf8;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      overflow-x: auto;
-    }
-
-    .copy-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 2px 4px;
+    .story-tag {
+      color: #818cf8;
       font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
-    .copy-btn:hover {
-      color: var(--text-main);
+    .story-header h2 {
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    .story-header p {
+      font-size: 15.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .story-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .story-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .story-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    .story-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1 0%, #38bdf8 100%);
+      opacity: 0.8;
+    }
+
+    .story-icon {
+      font-size: 30px;
+    }
+
+    .story-card h3 {
+      font-size: 17.5px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.01em;
+    }
+
+    .story-card p {
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.65;
+    }
+
+    .manifesto-quote {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .manifesto-quote blockquote {
+      font-size: 18px;
+      font-weight: 500;
+      color: #f1f5f9;
+      line-height: 1.6;
+      max-width: 680px;
+      font-style: italic;
+    }
+
+    .manifesto-author {
+      font-size: 13px;
+      color: #818cf8;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
     /* Feature Grid */
@@ -419,18 +460,18 @@
   <div class="container">
     <!-- Hero -->
     <section class="hero">
-      <div class="hero-badge">⚡ Production-Ready Dictation</div>
-      <h1>Speak Naturally.<br>Transcribe & Auto-Paste Anywhere.</h1>
+      <div class="hero-badge">⚡ The Thought-Speed Dictation Engine</div>
+      <h1>Speak at the Speed of Thought.<br>Intelligent Dictation for Every App.</h1>
       <p>
-        Listen runs in your Windows or macOS system tray. Press a global shortcut from any application, speak into your mic, and your words are instantly pasted right into your active cursor!
+        You think at 150 words per minute—stop letting a 40 WPM keyboard hold you back. Listen is an intelligent, whisper-quiet voice companion that turns natural speech into beautifully formatted text anywhere your cursor rests.
       </p>
       <div style="display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; justify-content: center;">
-        <button id="btn-install-pwa" class="btn btn-primary">
-          <span>📲 Install App (Phone / Mobile)</span>
-        </button>
         <a href="https://github.com/Gabby-design/listen/releases" target="_blank" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
-          <span>⬇️ Windows Installer (.exe)</span>
+          <span>⬇️ Download Windows Setup (v2.1.0)</span>
         </a>
+        <button id="btn-install-pwa" class="btn btn-secondary">
+          <span>📲 Install App on Phone</span>
+        </button>
         <a href="https://github.com/Gabby-design/listen" target="_blank" class="btn btn-secondary">
           <span>📦 View on GitHub</span>
         </a>
@@ -477,38 +518,60 @@
       </div>
     </section>
 
-    <!-- Installation Guide for Mobile & Windows -->
-    <section class="install-section">
-      <h2 class="section-headline">📱 Install on Phone & 💻 Windows PC</h2>
-      <div class="install-steps">
-        <div class="step-card">
-          <div class="step-num">📱</div>
-          <h3>Install on Phone (iOS / Android)</h3>
+    <!-- Why I Built Listen: The Philosophy & Story -->
+    <section class="story-section">
+      <div class="story-header">
+        <span class="story-tag">The Story & Philosophy</span>
+        <h2>Why I Built Listen</h2>
+        <p>A personal journey from keyboard fatigue and broken speech tools to frictionless thought-to-text.</p>
+      </div>
+
+      <div class="story-grid">
+        <div class="story-card">
+          <div class="story-icon">⚡</div>
+          <h3>Thinking at 150 WPM vs. Typing at 40 WPM</h3>
           <p>
-            • <strong>Android</strong>: Tap <strong>"Install App"</strong> above or browser menu (⋮) &rarr; <em>Install App</em>.<br>
-            • <strong>iPhone / iPad</strong>: Tap Safari Share icon <strong>[↑]</strong> &rarr; <strong>"Add to Home Screen"</strong>.<br>
-            Grants full microphone access. Opens as a native app with the animated fluid orb!
+            The human mind thinks and speaks at 150+ words per minute. But when we type, our fingers bottleneck us down to 40 or 50 words per minute. Brilliant creative flow evaporates in the split-second it takes to reach for the backspace key, correct typos, or wrestle with keyboard fatigue. I built Listen because our tools should keep up with our minds—not slow them down.
           </p>
         </div>
 
-        <div class="step-card">
-          <div class="step-num">💻</div>
-          <h3>Windows Desktop Installer</h3>
-          <p>Get the official Windows Setup Wizard package:</p>
-          <a href="https://github.com/Gabby-design/listen/releases" target="_blank" class="btn btn-primary" style="font-size: 13px; padding: 8px 14px; text-decoration: none; display: inline-flex;">
-            ⬇️ View Windows Installer Releases
+        <div class="story-card">
+          <div class="story-icon">🧠</div>
+          <h3>Why Traditional Voice Dictation Failed</h3>
+          <p>
+            Every existing dictation tool I tried felt rigid, robotic, and dumb. If you say "number one clean the room", they spell out "number 1" in awkward spots instead of creating a numbered list. They have no idea whether "one" is a digit or a word in conversation. They cut you off if you pause for breath, and they ignore natural grammar and brackets. Listen solves this with a real two-stage intelligence engine: acoustic capture powered by Whisper, fused with an ultra-fast LLM context brain that understands human intent.
+          </p>
+        </div>
+
+        <div class="story-card">
+          <div class="story-icon">🔮</div>
+          <h3>The Invisible Companion (Zero Focus Stealing)</h3>
+          <p>
+            I didn't want another bloated app window stealing focus from my code editor, browser, or chat window. Listen was designed to feel like an invisible superpower: a glowing neon fluid orb that appears silently at the bottom of your screen while you speak, and melts away the moment you stop. Your words are pasted straight into whatever app your cursor was already focused on.
+          </p>
+        </div>
+
+        <div class="story-card">
+          <div class="story-icon">⏱️</div>
+          <h3>Deep Listening for Extended Focus</h3>
+          <p>
+            Whether dictating a quick 3-second reply in Slack or speaking for an entire hour to draft a book chapter, technical design doc, or essay, Listen does not lose your train of thought. It records with lightweight Opus compression and passes long audio streams seamlessly, understanding when to place periods, commas, question marks, and paragraphs without manual intervention.
+          </p>
+        </div>
+      </div>
+
+      <div class="manifesto-quote">
+        <blockquote>
+          "Typing is a mechanical barrier between human cognition and digital expression. Listen removes the barrier, letting your voice shape your thoughts into reality."
+        </blockquote>
+        <span class="manifesto-author">Listen Dictation Manifesto</span>
+        <div style="display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; justify-content: center;">
+          <a href="https://github.com/Gabby-design/listen/releases" target="_blank" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
+            <span>⬇️ Download Windows Setup (v2.1.0)</span>
           </a>
-          <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
-            Local file: <code>dist/Listen Setup 1.0.0.exe</code>
-          </p>
-        </div>
-
-        <div class="step-card">
-          <div class="step-num">⌨️</div>
-          <h3>Global Background Shortcut</h3>
-          <p>
-            Runs silently in your Windows System Tray in the background. Press <strong>Ctrl+Shift+Space</strong> or <strong>Ctrl+Space</strong> anywhere to dictate and auto-paste into Word, Chrome, Slack, or any app!
-          </p>
+          <button id="btn-install-pwa-bottom" class="btn btn-secondary">
+            <span>📲 Install App on Phone</span>
+          </button>
         </div>
       </div>
     </section>
@@ -934,20 +997,24 @@
       if (btnInstall) btnInstall.style.display = 'inline-flex';
     });
 
-    if (btnInstall) {
-      btnInstall.addEventListener('click', async () => {
-        if (!deferredPrompt) {
-          alert('To install on phone or computer:\n• Android/Chrome: Tap ⋮ or Install icon in address bar.\n• iPhone/Safari: Tap Share icon and select "Add to Home Screen"!');
-          return;
-        }
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          btnInstall.style.display = 'none';
-        }
-        deferredPrompt = null;
-      });
+    const btnInstallBottom = document.getElementById('btn-install-pwa-bottom');
+
+    async function triggerPwaInstall() {
+      if (!deferredPrompt) {
+        alert('To install on phone:\n• Android / Chrome: Tap the ⋮ menu and select "Install App".\n• iPhone / Safari: Tap Share [↑] and select "Add to Home Screen"!\n\nOnce added, it opens as a full native app.');
+        return;
+      }
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        if (btnInstall) btnInstall.style.display = 'none';
+        if (btnInstallBottom) btnInstallBottom.style.display = 'none';
+      }
+      deferredPrompt = null;
     }
+
+    if (btnInstall) btnInstall.addEventListener('click', triggerPwaInstall);
+    if (btnInstallBottom) btnInstallBottom.addEventListener('click', triggerPwaInstall);
   </script>
 </body>
 </html>

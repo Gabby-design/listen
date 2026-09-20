@@ -18,6 +18,11 @@ const btnResetShortcut = document.getElementById('btn-reset-shortcut');
 const btnTestPill = document.getElementById('btn-test-pill');
 const pasteDelayInput = document.getElementById('paste-delay-input');
 
+const firstLaunchBanner = document.getElementById('first-launch-banner');
+const aiIntelligenceToggle = document.getElementById('ai-intelligence-toggle');
+const btnFinishOnboarding = document.getElementById('btn-finish-onboarding');
+const presetChips = document.querySelectorAll('.preset-chip');
+
 const btnSave = document.getElementById('btn-save');
 const btnCancel = document.getElementById('btn-cancel');
 const saveStatus = document.getElementById('save-status');
@@ -64,6 +69,11 @@ function populateForm(config) {
   // Shortcut
   recordedShortcut = config.shortcut || 'CommandOrControl+Shift+Space';
   renderShortcutBadges(recordedShortcut);
+
+  // AI Context Engine
+  if (aiIntelligenceToggle) {
+    aiIntelligenceToggle.checked = config.aiIntelligence !== false;
+  }
 
   // Paste Delay
   pasteDelayInput.value = config.pasteDelayMs || 80;
@@ -249,6 +259,16 @@ function setupEvents() {
     renderShortcutBadges(recordedShortcut);
   });
 
+  // Preset Shortcut Chips
+  presetChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const sc = chip.getAttribute('data-shortcut');
+      if (sc) {
+        stopRecordingShortcut(sc);
+      }
+    });
+  });
+
   if (btnTestPill) {
     btnTestPill.addEventListener('click', () => {
       window.settingsApi.triggerDictation();
@@ -262,7 +282,8 @@ function setupEvents() {
       model: modelSelect.value,
       apiKey: apiKeyInput.value.trim(),
       shortcut: recordedShortcut,
-      pasteDelayMs: parseInt(pasteDelayInput.value, 10) || 80
+      pasteDelayMs: parseInt(pasteDelayInput.value, 10) || 80,
+      aiIntelligence: aiIntelligenceToggle ? aiIntelligenceToggle.checked : true
     };
 
     saveStatus.textContent = 'Saving...';
@@ -279,10 +300,52 @@ function setupEvents() {
     }
   });
 
+  // Finish Onboarding / First Launch
+  if (btnFinishOnboarding) {
+    btnFinishOnboarding.addEventListener('click', async () => {
+      const updated = {
+        provider: providerGroq.checked ? 'groq' : 'openai',
+        model: modelSelect.value,
+        apiKey: apiKeyInput.value.trim(),
+        shortcut: recordedShortcut,
+        pasteDelayMs: parseInt(pasteDelayInput.value, 10) || 80,
+        aiIntelligence: aiIntelligenceToggle ? aiIntelligenceToggle.checked : true,
+        firstLaunchCompleted: true
+      };
+
+      saveStatus.textContent = 'Configuring your shortcut...';
+      const result = await window.settingsApi.saveConfig(updated);
+      if (result.success) {
+        saveStatus.style.color = 'var(--success)';
+        saveStatus.textContent = '✓ Ready to dictate! Closing setup...';
+        setTimeout(() => {
+          window.settingsApi.closeSettings();
+        }, 800);
+      } else {
+        saveStatus.style.color = 'var(--error)';
+        saveStatus.textContent = 'Error: ' + result.error;
+      }
+    });
+  }
+
   // Cancel / Close
   btnCancel.addEventListener('click', () => {
     window.settingsApi.closeSettings();
   });
+
+  // Listen for first-launch onboarding trigger
+  if (window.settingsApi.onSetFirstLaunchMode) {
+    window.settingsApi.onSetFirstLaunchMode((isFirst) => {
+      if (isFirst) {
+        if (firstLaunchBanner) firstLaunchBanner.style.display = 'flex';
+        if (btnFinishOnboarding) btnFinishOnboarding.style.display = 'inline-flex';
+        if (btnSave) btnSave.style.display = 'none';
+        if (btnCancel) btnCancel.style.display = 'none';
+        shortcutBox.scrollIntoView({ behavior: 'smooth' });
+        startRecordingShortcut();
+      }
+    });
+  }
 
   // Listen for tray command "Re-record Shortcut"
   window.settingsApi.onActivateShortcutRecorder(() => {

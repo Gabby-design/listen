@@ -10,7 +10,9 @@ const DEFAULT_CONFIG = {
   language: 'en',
   pasteDelayMs: 80,
   restoreClipboard: false,
-  soundFeedback: true
+  soundFeedback: true,
+  aiIntelligence: true,
+  firstLaunchCompleted: false
 };
 
 function getConfigPath() {
@@ -25,24 +27,32 @@ function getConfigPath() {
 function loadConfig() {
   const userConfigPath = getConfigPath();
   const localConfigPath = path.join(process.cwd(), 'config.json');
+  const dirnameConfigPath = path.join(__dirname, 'config.json');
 
-  let chosenPath = userConfigPath;
-  if (!fs.existsSync(userConfigPath) && fs.existsSync(localConfigPath)) {
-    chosenPath = localConfigPath;
+  let templateData = {};
+  if (fs.existsSync(dirnameConfigPath)) {
+    try {
+      templateData = JSON.parse(fs.readFileSync(dirnameConfigPath, 'utf8'));
+    } catch (e) {}
+  } else if (fs.existsSync(localConfigPath)) {
+    try {
+      templateData = JSON.parse(fs.readFileSync(localConfigPath, 'utf8'));
+    } catch (e) {}
   }
 
   try {
-    if (fs.existsSync(chosenPath)) {
-      const raw = fs.readFileSync(chosenPath, 'utf8');
+    if (fs.existsSync(userConfigPath)) {
+      const raw = fs.readFileSync(userConfigPath, 'utf8');
       const parsed = JSON.parse(raw);
-      return { ...DEFAULT_CONFIG, ...parsed };
+      return { ...DEFAULT_CONFIG, ...templateData, ...parsed };
     }
   } catch (err) {
     console.error('Error loading config, using defaults:', err);
   }
 
-  saveConfig(DEFAULT_CONFIG);
-  return { ...DEFAULT_CONFIG };
+  const initial = { ...DEFAULT_CONFIG, ...templateData };
+  saveConfig(initial);
+  return initial;
 }
 
 function saveConfig(newConfig) {

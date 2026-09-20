@@ -109,10 +109,13 @@ function createOverlayWindow() {
 }
 
 // Create or show Settings Window
-function openSettingsWindow(triggerRecorder = false) {
+function openSettingsWindow(triggerRecorder = false, isFirstLaunch = false) {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.show();
     settingsWindow.focus();
+    if (isFirstLaunch) {
+      settingsWindow.webContents.send('set-first-launch-mode', true);
+    }
     if (triggerRecorder) {
       settingsWindow.webContents.send('activate-shortcut-recorder');
     }
@@ -120,8 +123,8 @@ function openSettingsWindow(triggerRecorder = false) {
   }
 
   settingsWindow = new BrowserWindow({
-    width: 520,
-    height: 680,
+    width: 540,
+    height: 720,
     resizable: false,
     maximizable: false,
     title: 'Listen - Settings',
@@ -142,6 +145,9 @@ function openSettingsWindow(triggerRecorder = false) {
   settingsWindow.loadFile(path.join(__dirname, 'settings', 'settings.html'));
 
   settingsWindow.webContents.once('did-finish-load', () => {
+    if (isFirstLaunch) {
+      settingsWindow.webContents.send('set-first-launch-mode', true);
+    }
     if (triggerRecorder) {
       settingsWindow.webContents.send('activate-shortcut-recorder');
     }
@@ -333,6 +339,87 @@ function formatTranscription(rawText) {
   return text.trim();
 }
 
+// Two-stage AI context engine: Polishes raw speech with natural punctuation, lists, numbers, and brackets
+async function enhanceTranscriptionWithAI(rawText) {
+  if (!rawText || !rawText.trim()) return '';
+  if (config.aiIntelligence === false) {
+    return formatTranscription(rawText);
+  }
+
+  const provider = config.provider || 'groq';
+  const apiKey = config.apiKey ? config.apiKey.trim() : '';
+  if (!apiKey) {
+    return formatTranscription(rawText);
+  }
+
+  const llmModel = provider === 'groq' ? 'openai/gpt-oss-20b' : 'gpt-4o-mini';
+  const endpoint = provider === 'groq'
+    ? 'https://api.groq.com/openai/v1/chat/completions'
+    : 'https://api.openai.com/v1/chat/completions';
+
+  const systemPrompt = `You are Listen AI, an intelligent real-time dictation engine.
+Transform the raw, stream-of-consciousness speech transcription into polished, natural text while preserving the speaker's exact intended words and meaning.
+
+RULES:
+1. Contextual Numbers & Lists:
+   - When the speaker says "number one [item] number two [item]" or "step one ... step two", format them as clear lists (e.g. "1. [Item]\\n2. [Item]").
+   - In ordinary conversational sentences ("I have one sister", "around two or three hours", "one day"), use natural words or digits as appropriate in standard English.
+   - For currencies, percentages, dates, and measurements, format naturally (e.g. "$50", "25%", "March 15th", "10 km").
+2. Intelligent Punctuation & Capitalization:
+   - Accurately punctuate with commas, periods, question marks, exclamation marks, and colons based on grammar and sentence flow.
+   - Capitalize the start of sentences, proper nouns, acronyms, and the pronoun "I".
+3. Spoken Commands:
+   - Spoken punctuation commands ("comma", "period", "full stop", "question mark", "exclamation mark", "colon", "semicolon", "new line", "new paragraph") must be converted into their actual punctuation marks and paragraph line breaks.
+4. Brackets, Quotes, and Parentheses:
+   - When the speaker indicates a parenthetical aside or says "open bracket / in bracket / quote", wrap with appropriate brackets (parentheses) or quotation marks.
+5. Strict Output:
+   - Return ONLY the final formatted text.
+   - Do NOT add any preamble, conversational replies, explanations, warnings, or markdown code blocks (like \`\`\`).`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: llmModel,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: rawText }
+        ],
+        temperature: 0.1,
+        max_tokens: 4096
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+        let content = data.choices[0].message.content.trim();
+        if (content.startsWith('```') && content.endsWith('```')) {
+          content = content.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim();
+        }
+        if (content) {
+          return content;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('AI enhancement fallback to regex formatting:', err.message);
+  }
+
+  // Fallback to local regex formatting if network fails or takes too long
+  return formatTranscription(rawText);
+}
+
 // Send audio to Whisper API (Groq or OpenAI)
 async function transcribeAudio(buffer, mimeType) {
   const provider = config.provider || 'groq';
@@ -413,7 +500,17 @@ function setupIpcHandlers() {
 
       console.log(`Transcribing ${buffer.byteLength} bytes using ${config.provider}...`);
       const rawText = await transcribeAudio(buffer, mimeType);
-      const transcribedText = formatTranscription(rawText);
+
+      let transcribedText = '';
+      if (rawText && rawText.trim()) {
+        console.log(`Raw Whisper transcription: "${rawText}"`);
+        if (config.aiIntelligence !== false) {
+          console.log('Applying AI Context Engine...');
+          transcribedText = await enhanceTranscriptionWithAI(rawText);
+        } else {
+          transcribedText = formatTranscription(rawText);
+        }
+      }
 
       if (!transcribedText) {
         console.log('No speech detected in audio.');
@@ -503,6 +600,20 @@ function setupIpcHandlers() {
     }
   });
 
+  // Settings: Complete First Launch Setup
+  ipcMain.handle('complete-first-launch', (_event, customShortcut) => {
+    const update = { firstLaunchCompleted: true };
+    if (customShortcut) {
+      update.shortcut = customShortcut;
+    }
+    const result = saveConfig(update);
+    if (result.success) {
+      config = result.config;
+      registerGlobalShortcut();
+    }
+    return result;
+  });
+
   // Settings: Close
   ipcMain.on('close-settings', () => {
     if (settingsWindow && !settingsWindow.isDestroyed()) {
@@ -521,7 +632,12 @@ app.whenReady().then(() => {
 
   console.log(`Listen app ready! Shortcuts: ${registeredShortcuts.join(', ')}`);
 
-  if (process.platform === 'win32' && tray) {
+  // First launch onboarding: Automatically show shortcut selector window right after install
+  if (!config.firstLaunchCompleted) {
+    setTimeout(() => {
+      openSettingsWindow(true, true);
+    }, 600);
+  } else if (process.platform === 'win32' && tray) {
     try {
       tray.displayBalloon({
         title: 'Listen is Active in Background',
