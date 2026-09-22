@@ -126,11 +126,11 @@ function setupPermissions() {
 // Create Floating Fluid Orb Overlay
 function createOverlayWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+  const { x: workX, y: workY, width: screenWidth, height: screenHeight } = primaryDisplay.workArea;
 
   const orbSize = 140;
-  const x = Math.round((screenWidth - orbSize) / 2);
-  const y = screenHeight - orbSize - 16; // Bottom-center floating seamlessly above taskbar
+  const x = Math.round(workX + (screenWidth - orbSize) / 2);
+  const y = Math.round(workY + screenHeight - orbSize - 20); // Bottom-center floating seamlessly above taskbar
 
   overlayWindow = new BrowserWindow({
     width: orbSize,
@@ -159,7 +159,7 @@ function createOverlayWindow() {
   if (process.platform === 'darwin') {
     overlayWindow.setAlwaysOnTop(true, 'screen-saver');
   } else {
-    overlayWindow.setAlwaysOnTop(true, 'floating');
+    overlayWindow.setAlwaysOnTop(true);
   }
   overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
@@ -317,19 +317,26 @@ function registerGlobalShortcut() {
     listToRegister.push({ key: config.secondaryShortcut.trim(), secondary: true });
   }
 
-  // Windows resilience: register fallback hotkeys so IME switching doesn't block dictation
-  if (primary.toLowerCase().includes('shift') || primary.includes('Space')) {
-    if (!listToRegister.some(item => item.key === 'CommandOrControl+Space')) {
-      listToRegister.push({ key: 'CommandOrControl+Space', secondary: false });
-    }
-    if (!listToRegister.some(item => item.key === 'Alt+Space')) {
-      listToRegister.push({ key: 'Alt+Space', secondary: false });
+  // Multi-hotkey fallback list so IME, VS Code, or system menus never block dictation
+  const fallbacks = [
+    'CommandOrControl+Shift+Space',
+    'CommandOrControl+Space',
+    'F8',
+    'Alt+D'
+  ];
+
+  for (const fb of fallbacks) {
+    if (!listToRegister.some(item => item.key.toLowerCase() === fb.toLowerCase())) {
+      listToRegister.push({ key: fb, secondary: false });
     }
   }
 
   for (const item of listToRegister) {
     try {
-      const ok = globalShortcut.register(item.key, () => handleShortcutPressed(item.secondary, false));
+      const ok = globalShortcut.register(item.key, () => {
+        console.log(`Global shortcut pressed: ${item.key} (secondary: ${item.secondary})`);
+        handleShortcutPressed(item.secondary, false);
+      });
       if (ok) {
         registeredShortcuts.push(item.key);
         console.log(`Global shortcut registered: ${item.key} (secondary: ${item.secondary})`);
@@ -365,7 +372,11 @@ function handleShortcutPressed(isSecondary = false, isReleaseTrigger = false) {
       overlayWindow.webContents.send('start-recording');
 
       // Show without stealing focus from active window/cursor
-      overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+      if (process.platform === 'darwin') {
+        overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+      } else {
+        overlayWindow.setAlwaysOnTop(true);
+      }
       overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
       overlayWindow.showInactive();
       overlayWindow.moveTop();
@@ -398,23 +409,88 @@ function handleShortcutPressed(isSecondary = false, isReleaseTrigger = false) {
   }
 }
 
-// Intelligent formatting: Punctuation, capitalization, brackets, and verbal commands
+// Intelligent formatting: Punctuation, capitalization, brackets, numbers, math signs, and verbal commands
 function formatTranscription(rawText) {
   if (!rawText) return '';
   let text = rawText.trim();
 
-  // 1. Spoken punctuation commands conversion
+  // 1. Explicit number directives: "number one in figures" -> "1", "number 1 in words" -> "one"
+  const wordToFig = {
+    'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+    'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9',
+    'ten': '10', 'eleven': '11', 'twelve': '12'
+  };
+  const figToWord = {
+    '0': 'zero', '1': 'one', '2': 'two', '3': 'three', '4': 'four',
+    '5': 'five', '6': 'six', '7': 'seven', '8': 'eight', '9': 'nine',
+    '10': 'ten'
+  };
+
+  text = text.replace(/\bnumber\s+(zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+in\s+figures\b/gi, (_m, val) => {
+    const lower = val.toLowerCase();
+    return wordToFig[lower] || val;
+  });
+
+  text = text.replace(/\bnumber\s+(\d+|zero|one|two|three|four|five|six|seven|eight|nine|ten)\s+in\s+words\b/gi, (_m, val) => {
+    return figToWord[val] || val.toLowerCase();
+  });
+
+  // 2. Mathematical expressions with digits or words
+  text = text.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?:plus|\+)\s+(zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\b/gi, (_m, a, b) => {
+    const na = wordToFig[a.toLowerCase()] || a;
+    const nb = wordToFig[b.toLowerCase()] || b;
+    return `${na} + ${nb}`;
+  });
+  text = text.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?:minus|\-)\s+(zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\b/gi, (_m, a, b) => {
+    const na = wordToFig[a.toLowerCase()] || a;
+    const nb = wordToFig[b.toLowerCase()] || b;
+    return `${na} - ${nb}`;
+  });
+  text = text.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?:times|\*|multiplied by)\s+(zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\b/gi, (_m, a, b) => {
+    const na = wordToFig[a.toLowerCase()] || a;
+    const nb = wordToFig[b.toLowerCase()] || b;
+    return `${na} * ${nb}`;
+  });
+  text = text.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?:divided by|\/)\s+(zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\b/gi, (_m, a, b) => {
+    const na = wordToFig[a.toLowerCase()] || a;
+    const nb = wordToFig[b.toLowerCase()] || b;
+    return `${na} / ${nb}`;
+  });
+  text = text.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?:equals to|equal to|equals|=)\s+(zero|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\b/gi, (_m, a, b) => {
+    const na = wordToFig[a.toLowerCase()] || a;
+    const nb = wordToFig[b.toLowerCase()] || b;
+    return `${na} = ${nb}`;
+  });
+
+  // Hyphenated words: "user dash friendly" -> "user-friendly"
+  text = text.replace(/\b([a-zA-Z0-9]+)\s+(?:hyphen|dash)\s+([a-zA-Z0-9]+)\b/gi, '$1-$2');
+
+  // 3. Spoken punctuation commands and signs conversion
   const spokenPunctuation = [
+    { regex: /\b(ellipsis|ellipses|dot dot dot)\b/gi, rep: '...' },
     { regex: /\b(period|full stop)\b/gi, rep: '.' },
     { regex: /\b(comma)\b/gi, rep: ',' },
     { regex: /\b(question mark)\b/gi, rep: '?' },
     { regex: /\b(exclamation mark|exclamation point)\b/gi, rep: '!' },
     { regex: /\b(colon)\b/gi, rep: ':' },
     { regex: /\b(semicolon)\b/gi, rep: ';' },
+    { regex: /\b(hyphen|dash)\b/gi, rep: '-' },
+    { regex: /\b(plus sign)\b/gi, rep: '+' },
+    { regex: /\b(equals to|equal to)\b/gi, rep: '=' },
     { regex: /\b(open bracket|open parenthesis|open paren)\b/gi, rep: '(' },
     { regex: /\b(close bracket|close parenthesis|close paren)\b/gi, rep: ')' },
+    { regex: /\b(open square bracket)\b/gi, rep: '[' },
+    { regex: /\b(close square bracket)\b/gi, rep: ']' },
+    { regex: /\b(open curly bracket|open brace)\b/gi, rep: '{' },
+    { regex: /\b(close curly bracket|close brace)\b/gi, rep: '}' },
     { regex: /\b(open quote)\b/gi, rep: '"' },
     { regex: /\b(close quote)\b/gi, rep: '"' },
+    { regex: /\b(percent sign|percentage sign)\b/gi, rep: '%' },
+    { regex: /\b(at sign)\b/gi, rep: '@' },
+    { regex: /\b(hashtag|hash sign|pound sign)\b/gi, rep: '#' },
+    { regex: /\b(ampersand|and sign)\b/gi, rep: '&' },
+    { regex: /\b(forward slash)\b/gi, rep: '/' },
+    { regex: /\b(backslash)\b/gi, rep: '\\' },
     { regex: /\b(new line)\b/gi, rep: '\n' },
     { regex: /\b(new paragraph)\b/gi, rep: '\n\n' }
   ];
@@ -423,20 +499,28 @@ function formatTranscription(rawText) {
     text = text.replace(regex, rep);
   }
 
-  // 2. Fix spacing around punctuation marks: "hello , world" -> "hello, world"
-  text = text.replace(/\s+([,.:;?!%])/g, '$1');
+  // 4. Fix spacing around punctuation marks
+  text = text.replace(/\.\.\./g, '___ELLIPSIS___');
+  text = text.replace(/\s+([,:;?!%])/g, '$1');
+  text = text.replace(/\s+\./g, '.');
   text = text.replace(/([,.:;?!])([A-Za-z0-9])/g, '$1 $2');
+  text = text.replace(/___ELLIPSIS___/g, '... ');
 
-  // 3. Brackets & parenthesis formatting: "( text )" -> "(text)", "word(text)" -> "word (text)"
+  // 5. Brackets & parenthesis formatting: "( text )" -> "(text)", "word(text)" -> "word (text)"
   text = text.replace(/\(\s+/g, '(');
   text = text.replace(/\s+\)/g, ')');
   text = text.replace(/([A-Za-z0-9])\(/g, '$1 (');
   text = text.replace(/\)([A-Za-z0-9])/g, ') $1');
 
-  // 4. Collapse consecutive spaces
+  text = text.replace(/\[\s+/g, '[');
+  text = text.replace(/\s+\]/g, ']');
+  text = text.replace(/([A-Za-z0-9])\[/g, '$1 [');
+  text = text.replace(/\]([A-Za-z0-9])/g, '] $1');
+
+  // 6. Collapse consecutive spaces (preserving newlines)
   text = text.replace(/[ \t]+/g, ' ');
 
-  // 5. Intelligent capitalization:
+  // 7. Intelligent capitalization:
   // First character of dictation
   text = text.charAt(0).toUpperCase() + text.slice(1);
   // After terminal punctuation (. ? !) followed by whitespace
@@ -463,7 +547,7 @@ async function enhanceTranscriptionWithAI(rawText, mode = 'verbatim') {
     return formatTranscription(rawText);
   }
 
-  const llmModel = provider === 'groq' ? 'openai/gpt-oss-20b' : 'gpt-4o-mini';
+  const llmModel = provider === 'groq' ? 'qwen/qwen3.8-27b' : 'gpt-4o-mini';
   const endpoint = provider === 'groq'
     ? 'https://api.groq.com/openai/v1/chat/completions'
     : 'https://api.openai.com/v1/chat/completions';
@@ -471,35 +555,77 @@ async function enhanceTranscriptionWithAI(rawText, mode = 'verbatim') {
   let systemPrompt = '';
   if (mode === 'smart_ai') {
     systemPrompt = `You are Listen AI in Smart Polish Mode.
-Transform spoken speech into clear, professional, beautifully written text.
-RULES:
-1. Clean up vocal hesitations and filler words ("um", "uh", "you know", "like" when used as filler).
-2. Fix obvious grammatical slips while faithfully preserving the speaker's true meaning and authentic voice.
-3. Automatically format spoken lists or numbered steps into clean bullet points or numbered lists.
-4. Correct punctuation, capitalization, and paragraph breaks for maximum readability.
-5. Output ONLY the polished text with NO preamble, explanation, notes, or markdown code fences.`;
-  } else {
-    systemPrompt = `You are Listen AI, an exact verbatim dictation formatter.
+Your job is to listen to the speaker, understand the sentence they are putting together, fix phonetic or grammatical slips, and format clean, beautiful written text.
 
-CRITICAL VERBATIM RULES:
-1. PRESERVE EVERY SINGLE WORD EXACTLY AS SPOKEN.
-   - You are strictly forbidden from substituting, replacing, rephrasing, omitting, or inventing words.
-   - Never change a word because you think another word makes more sense in context. If the user said "there", keep "there" — NEVER change it to "today" or any other word.
-   - Do not translate, do not "fix" grammar by changing vocabulary. Preserve the speaker's exact vocabulary.
-2. YOUR ONLY ALLOWED ACTIONS:
-   - Capitalization: Capitalize the first letter of sentences, acronyms, and the standalone pronoun "I".
-   - Punctuation: Insert natural commas, periods, question marks, and exclamation marks where appropriate based on sentence flow.
-   - Spoken Punctuation Commands: Convert spoken punctuation words into punctuation symbols ("comma" -> ",", "period" or "full stop" -> ".", "question mark" -> "?", "exclamation mark" -> "!", "colon" -> ":", "new line" -> "\\n", "new paragraph" -> "\\n\\n").
-   - Spoken Lists: When the speaker says "number one [item]" or "step one [item]", format as a clean numbered point (e.g. "1. [Item]" or "Step 1: [Item]").
-   - Parentheses & Quotes: Wrap parenthetical thoughts or "in brackets" with "(...)".
-3. STRICT OUTPUT:
-   - Output ONLY the final formatted text.
-   - Do NOT add any preamble, explanation, notes, or markdown code fences (\`\`\`).`;
+CORE INSTRUCTIONS:
+1. UNDERSTAND SENTENCES & MEANING:
+   - Truly understand the meaning and context of the words coming out of the speaker's mouth.
+   - Assemble complete, coherent sentences with correct word placement, vocabulary, and spelling.
+   - Clean up vocal hesitations and filler words ("um", "uh", "you know", "like" when used as filler).
+   - Fix obvious grammatical or phonetic slips (such as clearly distinguishing "go" and "thank you") while faithfully preserving the speaker's true intent and voice.
+2. INTELLIGENT NUMBERS & FIGURES:
+   - When the speaker refers to figures, mathematical numbers, measurements, dates, times, currency, or explicit numbers ("number 1", "5 dollars", "3 o'clock"), write them in figures (e.g., 1, 5, 3:00).
+   - If the speaker says "in figures" or "in words", follow that directive explicitly (e.g. "number one in figures" -> "1", "number one in words" -> "one").
+   - For small cardinal numbers in everyday prose ("I have one question"), write as words unless the context is technical, quantitative, or list-oriented.
+3. SIGNS & SYMBOLS:
+   - Convert spoken mathematical and technical symbols into proper signs when used in math/technical contexts: "plus" -> "+", "equals" / "equals to" -> "=", "minus" -> "-", "times" / "multiplied by" -> "×" or "*", "divided by" -> "/", "percent" -> "%", "at" in handles/emails -> "@", "hashtag" -> "#", "ampersand" -> "&".
+   - Differentiate math vs prose ("2 plus 2 equals 4" -> "2 + 2 = 4", but "a big plus for us" -> "a big plus for us").
+4. PUNCTUATION & CADENCE:
+   - Insert natural commas, periods/full stops, question marks, exclamation marks, ellipses, hyphens, and brackets matching sentence rhythm and grammar even when punctuation words are not spoken.
+   - Convert spoken punctuation commands: "comma" -> ",", "period"/"full stop" -> ".", "question mark" -> "?", "exclamation mark" -> "!", "ellipsis"/"dot dot dot" -> "...", "bracket"/"in brackets" -> "(...)", "hyphen"/"dash" -> "-", "colon" -> ":", "semicolon" -> ";", "new line" -> newline.
+5. LISTS & STEPS:
+   - Automatically format spoken lists or numbered steps into clean numbered lists ("1. Item") or bullet points.
+6. STRICT OUTPUT:
+   - Output ONLY the polished text with NO preamble, explanation, notes, or markdown code fences.`;
+  } else {
+    systemPrompt = `You are Listen AI, an intelligent voice dictation engine.
+Your job is to listen to the speaker's words, understand their sentences, fix any phonetic speech misrecognitions or spelling errors, and format the output accurately and naturally.
+
+CORE INTELLIGENCE RULES:
+1. UNDERSTAND SENTENCES & WORDS:
+   - Truly understand the meaning and context of the words coming out of the speaker's mouth.
+   - If a word was misheard or phonetically garbled by speech-to-text (e.g. accented speech, subtle pronunciations like distinguishing "go" and "thank you"), correct it based on sentence context so the sentence makes complete, coherent sense.
+   - Ensure all words are spelled correctly and placed where they logically belong in the sentence.
+   - Faithfully capture every sentence and thought without hallucination or unrelated vocabulary.
+2. INTELLIGENT NUMBER & FIGURE FORMATTING:
+   - Format numbers according to context and speaker intent:
+     * When referring to figures, mathematical numbers, measurements, dates, times, currency, or explicit numbers ("number 1", "5 dollars", "3 o'clock", "step 2"), write them in figures (e.g., 1, 5, 3:00, Step 2).
+     * If the user says "in figures" or "in words", follow that directive explicitly (e.g., "number one in figures" -> "1", "number one in words" -> "one").
+     * For small cardinal numbers in everyday prose ("I have one question"), write as words unless the context is technical, quantitative, or list-oriented.
+3. SIGNS & MATHEMATICAL SYMBOLS:
+   - Convert spoken mathematical and technical symbols into proper signs when used in math/technical contexts:
+     * "plus" -> "+" (e.g., "two plus two" -> "2 + 2")
+     * "equals" or "equals to" -> "=" (e.g., "equals four" -> "= 4")
+     * "minus" -> "-" (e.g., "five minus three" -> "5 - 3")
+     * "times" or "multiplied by" -> "×" or "*"
+     * "divided by" -> "/"
+     * "percent" -> "%"
+     * "at" in handles/emails -> "@"
+     * "hashtag" / "hash" -> "#"
+     * "ampersand" -> "&"
+   - Contextual disambiguation: Differentiate math vs prose ("two plus two equals four" -> "2 + 2 = 4", but "that is a plus for us" -> "that is a plus for us").
+4. PUNCTUATION & CADENCE:
+   - Insert proper punctuation (commas, periods/full stops, question marks, exclamation marks, ellipses, hyphens, brackets/parentheses, quotes) matching natural grammatical rhythm, clauses, and pauses even when punctuation words are not spoken.
+   - Also convert explicitly spoken punctuation commands:
+     * "comma" -> ","
+     * "period" / "full stop" -> "."
+     * "question mark" -> "?"
+     * "exclamation mark" / "exclamation point" -> "!"
+     * "ellipsis" / "dot dot dot" -> "..."
+     * "bracket" / "open bracket ... close bracket" / "in brackets" -> "(...)"
+     * "hyphen" / "dash" -> "-"
+     * "colon" -> ":"
+     * "semicolon" -> ";"
+     * "new line" -> line break
+     * "new paragraph" -> double line break
+5. STRICT OUTPUT:
+   - Output ONLY the final transcribed text.
+   - No conversational replies, no explanations, no preamble, no markdown code blocks.`;
   }
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4500);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -545,7 +671,7 @@ CRITICAL VERBATIM RULES:
 async function transcribeAudio(buffer, mimeType) {
   const provider = config.provider || 'groq';
   const apiKey = config.apiKey ? config.apiKey.trim() : '';
-  const model = config.model || (provider === 'groq' ? 'whisper-large-v3' : 'whisper-1');
+  const model = config.model || (provider === 'groq' ? 'whisper-large-v3-turbo' : 'whisper-1');
 
   if (!apiKey) {
     throw new Error('No API key configured');
@@ -567,10 +693,12 @@ async function transcribeAudio(buffer, mimeType) {
     formData.append('language', config.language);
   }
 
-  // Personal Vocabulary / Custom Words injection into Whisper context prompt
-  if (config.customVocabulary && config.customVocabulary.trim()) {
-    formData.append('prompt', config.customVocabulary.trim());
-  }
+  // Base conditioning prompt to establish punctuation, capitalization, numbers, and signs for Whisper
+  const baseWhisperPrompt = 'Hello! I am dictating clear, natural sentences with proper punctuation, periods, commas, question marks, exclamation marks, ellipses (...), brackets (like this), hyphens, and symbols like +, =, -, %, @, #. Numbers like 1, 2, 3 or one, two, three.';
+  const whisperPrompt = (config.customVocabulary && config.customVocabulary.trim())
+    ? `${baseWhisperPrompt} Custom terms: ${config.customVocabulary.trim()}`
+    : baseWhisperPrompt;
+  formData.append('prompt', whisperPrompt);
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -652,15 +780,24 @@ function setupIpcHandlers() {
       // 1. Save to local history drawer so user never loses spoken content
       addHistoryItem(transcribedText, activeMode);
 
-      // 2. Preserve previous clipboard content if restoreClipboard is enabled
-      let previousClipboard = null;
-      if (config.restoreClipboard !== false) {
-        try {
-          previousClipboard = clipboard.readText();
-        } catch (e) {}
+      // 2. Snapshot user's previous clipboard so it is NEVER lost or overwritten
+      let previousText = '';
+      let previousHtml = '';
+      let previousImage = null;
+      let hadPreviousContent = false;
+
+      try {
+        previousText = clipboard.readText();
+        previousHtml = clipboard.readHTML();
+        previousImage = clipboard.readImage();
+        hadPreviousContent = (previousText && previousText.length > 0) ||
+                             (previousHtml && previousHtml.length > 0) ||
+                             (previousImage && !previousImage.isEmpty());
+      } catch (e) {
+        console.warn('Error reading clipboard snapshot:', e);
       }
 
-      // 3. Write transcribed text to system clipboard
+      // 3. Write transcribed text to system clipboard for instant injection
       clipboard.writeText(transcribedText);
 
       // 4. Hide overlay immediately
@@ -670,18 +807,29 @@ function setupIpcHandlers() {
       appState = 'idle';
 
       // 5. Wait brief focus stability delay and trigger paste
-      const delay = config.pasteDelayMs || 80;
+      const delay = config.pasteDelayMs || 40;
       const pasteMethod = config.pasteMethod || 'default';
       await simulatePaste(delay, pasteMethod);
 
-      // 6. Restore user's previous clipboard so it's not destroyed
-      if (previousClipboard !== null) {
-        setTimeout(() => {
-          try {
-            clipboard.writeText(previousClipboard);
-          } catch (e) {}
-        }, 180);
-      }
+      // 6. IMMEDIATELY restore user's previous clipboard content (or clear it if it was empty)
+      // The user explicitly demanded: "I don't want it to copy anything... it should not copy it to my clipboard... because I can use it finish and paste what I already copied before I even start using it"
+      setTimeout(() => {
+        try {
+          if (hadPreviousContent) {
+            clipboard.write({
+              text: previousText,
+              html: previousHtml,
+              image: (previousImage && !previousImage.isEmpty()) ? previousImage : undefined
+            });
+            console.log('User previous clipboard restored.');
+          } else {
+            clipboard.clear();
+            console.log('Clipboard cleared to prevent leaving dictation in clipboard.');
+          }
+        } catch (e) {
+          console.warn('Error restoring clipboard:', e);
+        }
+      }, 35);
     } catch (err) {
       console.error('Transcription error:', err);
       let displayMsg = 'Error: STT failed';

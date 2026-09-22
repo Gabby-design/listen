@@ -1,4 +1,4 @@
-// Listen v2.1.2 Settings Controller
+// Listen v0.0.03 Settings Controller
 // Elements
 const tabButtons = document.querySelectorAll('.tab-btn');
 const tabPanels = document.querySelectorAll('.tab-panel');

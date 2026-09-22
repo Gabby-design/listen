@@ -258,8 +258,9 @@ async function startRecording() {
       mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,
-          echoCancellation: false, // Prevent cutting off speaker's voice
-          noiseSuppression: false, // Prevent muffling soft consonants like 'th' in 'there'
+          sampleRate: 48000,
+          echoCancellation: true,
+          noiseSuppression: true,
           autoGainControl: true
         }
       });

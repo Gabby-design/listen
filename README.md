@@ -113,6 +113,24 @@ npm start
 
 ---
 
+## Voice & Punctuation Intelligence
+
+Listen includes an intelligent context engine that formats natural speech and verbal commands:
+
+- **Figures vs. Words**:
+  - Contextual numbers: dates, times, measurements, currency, and numbered lists format automatically into figures (e.g., `1`, `5`, `3 o'clock`).
+  - Explicit directives: "number one in figures" outputs `1`; "number one in words" outputs `one`.
+  - Natural prose: cardinal numbers in general conversational prose remain words ("I have one question").
+- **Signs & Mathematical Symbols**:
+  - Spoken math formulas convert directly to symbols: "two plus two equals four" becomes `2 + 2 = 4`.
+  - Distinguishes math vs. prose ("a big plus for us" remains words).
+  - Supports `+`, `=`, `-`, `*`, `/`, `%`, `@`, `#`, `&`, `_`.
+- **Punctuation & Cadence**:
+  - Natural cadence: automatically places commas, full stops, and question marks based on grammatical structure and pauses even when punctuation words are not spoken.
+  - Verbal punctuation commands: "comma" (`,`), "period" or "full stop" (`.`), "question mark" (`?`), "exclamation mark" (`!`), "ellipsis" or "dot dot dot" (`...`), "bracket" or "in brackets" (`(...)`), "hyphen" or "dash" (`-`), "colon" (`:`), "semicolon" (`;`), "new line" (line break).
+
+---
+
 ## License
 
 MIT © Gabby-design

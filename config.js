@@ -5,13 +5,13 @@ const { app } = require('electron');
 const DEFAULT_CONFIG = {
   provider: 'groq', // 'groq' | 'openai'
   apiKey: process.env.GROQ_API_KEY || '',
-  model: 'whisper-large-v3', // 'whisper-large-v3' | 'whisper-1'
+  model: 'whisper-large-v3-turbo', // 'whisper-large-v3-turbo' | 'whisper-1'
   shortcut: 'CommandOrControl+Shift+Space',
   secondaryShortcut: 'CommandOrControl+Shift+K',
   dictationMode: 'toggle', // 'toggle' | 'push_to_talk'
   language: 'en',
   pasteMethod: 'default', // 'default' (Ctrl+V) | 'terminal' (Ctrl+Shift+V) | 'shift_insert'
-  pasteDelayMs: 80,
+  pasteDelayMs: 40,
   restoreClipboard: true,
   soundFeedback: true,
   aiIntelligence: true,
@@ -55,14 +55,28 @@ function loadConfig() {
   }
 
   const initial = { ...DEFAULT_CONFIG, ...templateData };
-  saveConfig(initial);
+  try {
+    const dir = path.dirname(userConfigPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(userConfigPath, JSON.stringify(initial, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Error creating initial user config:', e);
+  }
   return initial;
 }
 
 function saveConfig(newConfig) {
   const configPath = getConfigPath();
   try {
-    const merged = { ...loadConfig(), ...newConfig };
+    let current = {};
+    if (fs.existsSync(configPath)) {
+      try {
+        current = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      } catch (e) {}
+    }
+    const merged = { ...DEFAULT_CONFIG, ...current, ...newConfig };
     const dir = path.dirname(configPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });

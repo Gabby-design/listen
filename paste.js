@@ -37,11 +37,11 @@ function getWindowsVbsScript(method = 'default') {
 
 /**
  * Simulates paste into active focus with configurable method and delay.
- * @param {number} delayMs Delay before pasting in milliseconds (default: 80ms)
+ * @param {number} delayMs Delay before pasting in milliseconds (default: 40ms)
  * @param {string} method 'default' (Ctrl+V) | 'terminal' (Ctrl+Shift+V) | 'shift_insert' (Shift+Insert)
  * @returns {Promise<boolean>}
  */
-function simulatePaste(delayMs = 80, method = 'default') {
+function simulatePaste(delayMs = 40, method = 'default') {
   return new Promise((resolve) => {
     setTimeout(() => {
       const platform = process.platform;

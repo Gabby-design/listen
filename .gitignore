@@ -7,6 +7,7 @@ build/
 
 # Local configuration and logs
 config.json
+scratch/
 *.log
 npm-debug.log*
 yarn-debug.log*
