@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Listen - Settings</title>
+  <title>Listen Dictation</title>
   <link rel="stylesheet" href="settings.css">
 </head>
 <body>
@@ -19,8 +19,11 @@
           </svg>
         </div>
         <div>
-          <h1>Listen Dictation</h1>
-          <p class="subtitle">v0.0.03 • AI Voice-to-Text & Instant Injection</p>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h1>Listen Dictation</h1>
+            <span class="status-pill-ready"><span class="status-pill-dot"></span> Ready</span>
+          </div>
+          <p class="subtitle">v0.0.4 • AI Voice-to-Text & Offline Dictation</p>
         </div>
       </div>
 
@@ -163,8 +166,29 @@
           </div>
         </div>
 
+        <!-- Offline Speech Engine Settings -->
+        <div class="form-section">
+          <div class="section-row-toggle">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label class="section-title">Offline Speech Engine (Zero Internet Required)</label>
+                <span class="offline-pill" style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;">Offline Ready</span>
+              </div>
+              <p class="section-desc">Enables local speech recognition directly on your PC with no internet connection required. Automatically takes over whenever you are offline.</p>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="offline-fallback-toggle" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); padding: 9px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+            <span id="offline-engine-status-text" style="font-size: 12px; color: var(--text-muted);">Status: Checking local engine...</span>
+            <button type="button" id="btn-test-offline-engine" class="btn btn-secondary btn-sm">Test Offline Engine</button>
+          </div>
+        </div>
+
         <div class="developer-note">
-          🔒 Speech & AI services are managed and pre-configured. No API key configuration required.
+          🔒 Speech & AI services are managed and pre-configured. Local offline dictation works 100% without internet.
         </div>
       </div>
 
@@ -207,6 +231,34 @@
             </div>
             <label class="switch-toggle">
               <input type="checkbox" id="restore-clipboard-toggle" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Background Audio Muting -->
+        <div class="form-section">
+          <div class="section-row-toggle">
+            <div>
+              <label class="section-title">Mute Speakers & Pause Music When Listening</label>
+              <p class="section-desc">Instantly mutes computer sound and pauses active media players (YouTube, Spotify, VLC) so your speech is crystal clear without speaker sound bleeding into the microphone.</p>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="mute-audio-toggle" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Window Close Behavior -->
+        <div class="form-section">
+          <div class="section-row-toggle">
+            <div>
+              <label class="section-title">Keep Listening in Background on Close</label>
+              <p class="section-desc">Closing this window minimizes Listen to the system tray so your hotkey dictation remains active in the background. Uncheck to quit completely on close.</p>
+            </div>
+            <label class="switch-toggle">
+              <input type="checkbox" id="close-to-tray-toggle" checked>
               <span class="switch-slider"></span>
             </label>
           </div>
@@ -256,6 +308,7 @@
     <footer class="settings-footer">
       <div id="save-status" class="save-status"></div>
       <div class="action-buttons">
+        <button type="button" id="btn-quit-app" class="btn btn-danger-outline" style="margin-right: auto;" title="Exit Listen and stop all background listening">Quit Listen</button>
         <button type="button" id="btn-cancel" class="btn btn-secondary">Close</button>
         <button type="button" id="btn-save" class="btn btn-primary">Save Changes</button>
         <button type="button" id="btn-finish-onboarding" class="btn btn-primary btn-onboard" style="display: none;">

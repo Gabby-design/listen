@@ -287,6 +287,49 @@ async function startRecording() {
       }
     };
 
+function resampleTo16kHz(audioBuffer) {
+  const sourceRate = audioBuffer.sampleRate;
+  const targetRate = 16000;
+  const channelData = audioBuffer.getChannelData(0);
+  if (sourceRate === targetRate) return channelData;
+  const ratio = sourceRate / targetRate;
+  const targetLength = Math.round(channelData.length / ratio);
+  const result = new Float32Array(targetLength);
+  for (let i = 0; i < targetLength; i++) {
+    const srcIndex = Math.min(Math.floor(i * ratio), channelData.length - 1);
+    result[i] = channelData[srcIndex];
+  }
+  return result;
+}
+
+function encodeWav(samples, sampleRate = 16000) {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+  function writeString(offset, string) {
+    for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+  }
+  writeString(0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+  let offset = 44;
+  for (let i = 0; i < samples.length; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    offset += 2;
+  }
+  return buffer;
+}
+
     mediaRecorder.onstop = async () => {
       if (recordedChunks.length === 0) {
         if (window.overlayApi) window.overlayApi.sendError('No audio recorded');
@@ -294,7 +337,17 @@ async function startRecording() {
       }
       const recordedBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
       const arrayBuffer = await recordedBlob.arrayBuffer();
-      if (window.overlayApi) window.overlayApi.sendAudio(arrayBuffer, recordedBlob.type);
+      let wavBuffer = null;
+      try {
+        if (audioContext) {
+          const decoded = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+          const resampled = resampleTo16kHz(decoded);
+          wavBuffer = encodeWav(resampled, 16000);
+        }
+      } catch (e) {
+        console.warn('WAV encoding skipped:', e);
+      }
+      if (window.overlayApi) window.overlayApi.sendAudio(arrayBuffer, recordedBlob.type, wavBuffer);
     };
 
     mediaRecorder.onerror = (e) => {

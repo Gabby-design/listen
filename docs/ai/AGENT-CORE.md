@@ -15,7 +15,7 @@ last_reviewed: "2026-09-22"
 
 ## 1. What this project is
 
-<!-- Two or three sentences: product, owner, what it is for, the vocabulary agents must use and where it is defined (PRD §). Point to ARCHITECTURE.md for shape and MEMORY.md for current state. No invented facts. -->
+Listen is a desktop voice dictation application for Windows and macOS built with Electron. It provides zero-focus-steal floating pill dictation, cloud Whisper transcription (Groq/OpenAI) with intelligent formatting, 100% offline speech recognition via the native Windows Speech Platform, background media pausing and master audio muting during speech capture, and native simulated paste injection with clipboard preservation. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for architectural structure and [`MEMORY.md`](./MEMORY.md) for current state.
 
 ## 2. Startup — the context-loading protocol (RULE-CORE-001)
 

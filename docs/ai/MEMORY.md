@@ -4,26 +4,35 @@
 
 ## Current Position
 
-Desktop voice dictation application built with Electron for Windows and macOS. Version 0.0.03. Audio capture via HTML5 MediaRecorder and Web Audio API, transcription via Groq Whisper (`whisper-large-v3-turbo`) or OpenAI Whisper (`whisper-1`), context-aware formatting and phonetic correction via Groq (`qwen/qwen3.8-27b`), and simulated paste injection via WScript.Shell (Windows) or osascript (macOS). Pre-paste clipboard snapshotting ensures the user's existing clipboard is never overwritten by dictation. Working tree contains modified files ready for owner review.
+Desktop voice dictation application built with Electron for Windows and macOS. Version 0.0.4. Features fully offline speech recognition via the native Windows Speech Platform (`offlinetranscriber.exe`), automatic background audio output muting and media player pausing during dictation (`audiocontrol.exe`), full desktop application window lifecycle on startup with tray minimization and complete exit controls, cloud Whisper fallback, and simulated paste injection with zero clipboard residue.
 
 ## Fixed Decisions
 
 - Use Electron for cross-platform desktop application runtime.
-- Use Groq Whisper (`whisper-large-v3-turbo`) for primary ultra-low latency transcription.
-- Use Groq (`qwen/qwen3.8-27b`) for contextual AI formatting, phonetic correction, and sentence assembly.
+- Use native Windows Speech Platform (`System.Speech.Recognition` with `DictationGrammar`) for 100% offline speech-to-text with zero external download or bundle overhead.
+- Use Windows Core Audio Endpoint API (`IAudioEndpointVolume`) and `VK_MEDIA_PLAY_PAUSE` to cleanly mute system sound and pause active media during speech input.
+- Launch main application window on executable startup; minimize to system tray on window close when `closeToTray` is active; provide explicit quit button to terminate both window and background listening completely.
+- Use Groq Whisper (`whisper-large-v3-turbo`) for cloud ultra-low latency transcription when online with automatic offline fallback.
 - Preserve system clipboard by snapshotting before injection and restoring 35ms after paste execution; clear clipboard if empty previously.
 - Frameless floating orb widget set to `focusable: false` to prevent stealing OS window focus from target cursor.
 
 ## Architecture
 
-- Main Process (`main.js`): Manages system tray, global shortcut registration, IPC coordination, audio buffer forwarding to Groq API, AI context formatting, and simulated paste dispatch.
-- Overlay Renderer (`overlay/`): Frameless fluid orb rendered on HTML5 canvas with Web Audio analyser and MediaRecorder at 48 kHz with noise suppression and echo cancellation.
-- Settings Renderer (`settings/`): User interface for configuring trigger mode (toggle vs push-to-talk), hotkeys, audio feedback, and custom vocabulary.
+- Main Process (`main.js`): Manages application lifecycle, main window and tray, global shortcut registration, audio muting coordination, offline/cloud transcription dispatch, and simulated paste injection.
+- Native Helpers (`assets/bin/`):
+  - `audiocontrol.exe`: Native Windows Core Audio endpoint volume muting and media play/pause simulation.
+  - `offlinetranscriber.exe`: Native Windows offline speech recognition engine using DictationGrammar.
+  - `keywatcher.exe`: Low-level keyboard state watcher for Push-to-Talk key release.
+- Overlay Renderer (`overlay/`): Frameless fluid orb rendered on HTML5 canvas with Web Audio analyser, MediaRecorder, and 16kHz mono WAV encoding pipeline.
+- Main/Settings Renderer (`settings/`): User interface for configuring trigger mode, hotkeys, offline engine diagnostics, background audio muting, and transcription history.
 - Native Paste Automation (`paste.js`): Dispatches native keystrokes (`Ctrl+V` on Windows, `Cmd+V` on macOS).
 - Storage: Local configuration stored in `config.json`, transcription history in `history.js`.
 
 ## Features
 
+- Fully offline speech recognition with zero internet requirement.
+- Background audio output muting and media player pausing during listening.
+- Native desktop application window lifecycle on startup with tray minimization and explicit quit.
 - Zero-focus-stealing floating orb indicator.
 - Global keyboard hotkey trigger (`Ctrl+Shift+Space` default).
 - Push-to-talk and toggle dictation modes.
@@ -39,7 +48,7 @@ Desktop voice dictation application built with Electron for Windows and macOS. V
 - Node.js >= 18.0.0.
 - Windows 10/11 or macOS.
 - Working audio input microphone.
-- Valid Groq or OpenAI API key in `config.json`.
+- Optional Groq or OpenAI API key in `config.json` for cloud transcription.
 - Launch command: `npm start`.
 
 ## Gotchas

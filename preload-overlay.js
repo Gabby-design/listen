@@ -16,8 +16,8 @@ contextBridge.exposeInMainWorld('overlayApi', {
   onSetSoundFeedback: (callback) => {
     ipcRenderer.on('set-sound-feedback', (_event, enabled) => callback(enabled));
   },
-  sendAudio: (arrayBuffer, mimeType) => {
-    ipcRenderer.send('audio-captured', { buffer: arrayBuffer, mimeType });
+  sendAudio: (arrayBuffer, mimeType, wavBuffer) => {
+    ipcRenderer.send('audio-captured', { buffer: arrayBuffer, mimeType, wavBuffer });
   },
   sendError: (errorMessage) => {
     ipcRenderer.send('recording-error', errorMessage);

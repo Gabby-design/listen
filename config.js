@@ -3,9 +3,13 @@ const path = require('path');
 const { app } = require('electron');
 
 const DEFAULT_CONFIG = {
-  provider: 'groq', // 'groq' | 'openai'
+  provider: 'groq', // 'groq' | 'openai' | 'offline'
   apiKey: process.env.GROQ_API_KEY || '',
-  model: 'whisper-large-v3-turbo', // 'whisper-large-v3-turbo' | 'whisper-1'
+  model: 'whisper-large-v3-turbo', // 'whisper-large-v3-turbo' | 'whisper-1' | 'offline-windows'
+  offlineFallback: true,
+  muteAudioOnRecord: true,
+  pauseMediaOnRecord: true,
+  closeToTray: true,
   shortcut: 'CommandOrControl+Shift+Space',
   secondaryShortcut: 'CommandOrControl+Shift+K',
   dictationMode: 'toggle', // 'toggle' | 'push_to_talk'

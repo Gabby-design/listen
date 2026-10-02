@@ -30,6 +30,13 @@ const soundFeedbackToggle = document.getElementById('sound-feedback-toggle');
 const pasteMethodSelect = document.getElementById('paste-method-select');
 const restoreClipboardToggle = document.getElementById('restore-clipboard-toggle');
 const pasteDelayInput = document.getElementById('paste-delay-input');
+const muteAudioToggle = document.getElementById('mute-audio-toggle');
+const closeToTrayToggle = document.getElementById('close-to-tray-toggle');
+
+// Offline Engine
+const offlineFallbackToggle = document.getElementById('offline-fallback-toggle');
+const offlineEngineStatusText = document.getElementById('offline-engine-status-text');
+const btnTestOfflineEngine = document.getElementById('btn-test-offline-engine');
 
 // History
 const historySearchInput = document.getElementById('history-search-input');
@@ -43,6 +50,7 @@ const firstLaunchBanner = document.getElementById('first-launch-banner');
 const btnFinishOnboarding = document.getElementById('btn-finish-onboarding');
 const btnSave = document.getElementById('btn-save');
 const btnCancel = document.getElementById('btn-cancel');
+const btnQuitApp = document.getElementById('btn-quit-app');
 const saveStatus = document.getElementById('save-status');
 
 // State
@@ -147,6 +155,27 @@ function populateForm(config) {
   }
   if (pasteDelayInput) {
     pasteDelayInput.value = config.pasteDelayMs || 80;
+  }
+  if (muteAudioToggle) {
+    muteAudioToggle.checked = config.muteAudioOnRecord !== false;
+  }
+  if (closeToTrayToggle) {
+    closeToTrayToggle.checked = config.closeToTray !== false;
+  }
+  if (offlineFallbackToggle) {
+    offlineFallbackToggle.checked = config.offlineFallback !== false;
+  }
+
+  // Check offline speech engine status
+  if (window.settingsApi && window.settingsApi.testOfflineEngine) {
+    window.settingsApi.testOfflineEngine().then(res => {
+      if (res && res.success && offlineEngineStatusText) {
+        offlineEngineStatusText.textContent = 'Engine: ' + res.message;
+        offlineEngineStatusText.style.color = '#34d399';
+      } else if (res && offlineEngineStatusText) {
+        offlineEngineStatusText.textContent = 'Engine status: ' + (res.error || 'Unavailable');
+      }
+    }).catch(() => {});
   }
 }
 
@@ -422,7 +451,10 @@ function getFormData() {
     soundFeedback: soundFeedbackToggle ? soundFeedbackToggle.checked : true,
     pasteMethod: pasteMethodSelect ? pasteMethodSelect.value : 'default',
     restoreClipboard: restoreClipboardToggle ? restoreClipboardToggle.checked : true,
-    pasteDelayMs: parseInt(pasteDelayInput ? pasteDelayInput.value : 80, 10) || 80
+    pasteDelayMs: parseInt(pasteDelayInput ? pasteDelayInput.value : 80, 10) || 80,
+    offlineFallback: offlineFallbackToggle ? offlineFallbackToggle.checked : true,
+    muteAudioOnRecord: muteAudioToggle ? muteAudioToggle.checked : true,
+    closeToTray: closeToTrayToggle ? closeToTrayToggle.checked : true
   };
 }
 
@@ -471,6 +503,44 @@ function setupSaveAndActions() {
   btnCancel.addEventListener('click', () => {
     window.settingsApi.closeSettings();
   });
+
+  // Test Offline Engine Button
+  if (btnTestOfflineEngine) {
+    btnTestOfflineEngine.addEventListener('click', async () => {
+      if (offlineEngineStatusText) {
+        offlineEngineStatusText.textContent = 'Testing offline speech engine...';
+        offlineEngineStatusText.style.color = '#93c5fd';
+      }
+      try {
+        const res = await window.settingsApi.testOfflineEngine();
+        if (res && res.success) {
+          if (offlineEngineStatusText) {
+            offlineEngineStatusText.textContent = '✓ ' + res.message;
+            offlineEngineStatusText.style.color = '#34d399';
+          }
+        } else {
+          if (offlineEngineStatusText) {
+            offlineEngineStatusText.textContent = '✗ ' + (res ? res.error : 'Test failed');
+            offlineEngineStatusText.style.color = '#f87171';
+          }
+        }
+      } catch (err) {
+        if (offlineEngineStatusText) {
+          offlineEngineStatusText.textContent = '✗ Error: ' + err.message;
+          offlineEngineStatusText.style.color = '#f87171';
+        }
+      }
+    });
+  }
+
+  // Quit App Button (exits both window and background listening)
+  if (btnQuitApp) {
+    btnQuitApp.addEventListener('click', () => {
+      if (confirm('Quit Listen completely? All background listening will stop.')) {
+        window.settingsApi.quitApp();
+      }
+    });
+  }
 
   // First-launch mode listener
   if (window.settingsApi.onSetFirstLaunchMode) {

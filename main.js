@@ -47,6 +47,108 @@ function getKeyWatcherPath() {
   return null;
 }
 
+function getAudioControlPath() {
+  const localPath = path.join(__dirname, 'assets', 'bin', 'audiocontrol.exe');
+  if (app.isPackaged) {
+    const unpacked = path.join(process.resourcesPath, 'app.asar.unpacked', 'assets', 'bin', 'audiocontrol.exe');
+    if (fs.existsSync(unpacked)) return unpacked;
+  }
+  if (fs.existsSync(localPath)) return localPath;
+  return null;
+}
+
+function getOfflineTranscriberPath() {
+  const localPath = path.join(__dirname, 'assets', 'bin', 'offlinetranscriber.exe');
+  if (app.isPackaged) {
+    const unpacked = path.join(process.resourcesPath, 'app.asar.unpacked', 'assets', 'bin', 'offlinetranscriber.exe');
+    if (fs.existsSync(unpacked)) return unpacked;
+  }
+  if (fs.existsSync(localPath)) return localPath;
+  return null;
+}
+
+let isAudioMutedByListen = false;
+
+function pauseAndMuteAudio() {
+  if (config.muteAudioOnRecord === false) return;
+  if (process.platform !== 'win32') return;
+  const exePath = getAudioControlPath();
+  if (!exePath || !fs.existsSync(exePath)) return;
+
+  try {
+    execFile(exePath, ['start-listening'], (err, stdout) => {
+      if (err) {
+        console.warn('Audio muting failed:', err.message);
+      } else {
+        isAudioMutedByListen = true;
+        console.log('[AudioControl]: Background audio muted & media paused while listening.');
+      }
+    });
+  } catch (e) {
+    console.warn('Audio muting exception:', e);
+  }
+}
+
+function restoreAudio() {
+  if (process.platform !== 'win32') return;
+  if (!isAudioMutedByListen && config.muteAudioOnRecord === false) return;
+  const exePath = getAudioControlPath();
+  if (!exePath || !fs.existsSync(exePath)) return;
+
+  try {
+    execFile(exePath, ['stop-listening'], (err) => {
+      isAudioMutedByListen = false;
+      if (err) {
+        console.warn('Audio restore failed:', err.message);
+      } else {
+        console.log('[AudioControl]: System audio output restored.');
+      }
+    });
+  } catch (e) {
+    console.warn('Audio restore exception:', e);
+  }
+}
+
+function transcribeAudioOffline(audioBuffer) {
+  return new Promise((resolve, reject) => {
+    if (process.platform !== 'win32') {
+      return reject(new Error('Offline speech engine currently requires Windows.'));
+    }
+    const exePath = getOfflineTranscriberPath();
+    if (!exePath || !fs.existsSync(exePath)) {
+      return reject(new Error('Offline transcriber binary not found at ' + exePath));
+    }
+
+    try {
+      const tempDir = app.getPath('userData');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      const tempWav = path.join(tempDir, `offline_dictation_${Date.now()}.wav`);
+      fs.writeFileSync(tempWav, Buffer.from(audioBuffer));
+
+      execFile(exePath, ['transcribe', tempWav], { timeout: 25000 }, (err, stdout, stderr) => {
+        // Clean up temporary wav file safely
+        try {
+          if (fs.existsSync(tempWav)) fs.unlinkSync(tempWav);
+        } catch (cleanupErr) {}
+
+        if (err) {
+          console.error('Offline transcription process error:', err, stderr);
+          return reject(new Error(`Offline STT failed: ${stderr || err.message}`));
+        }
+
+        const recognizedText = stdout ? stdout.trim() : '';
+        console.log(`[Offline Transcriber]: Recognized "${recognizedText}"`);
+        resolve(recognizedText);
+      });
+    } catch (err) {
+      console.error('Offline transcriber invocation error:', err);
+      reject(err);
+    }
+  });
+}
+
 function getVirtualKeyCodesForShortcut(shortcut) {
   if (!shortcut) return ['0x11', '0x10', '0x20'];
   const parts = shortcut.split('+').map(p => p.trim());
@@ -174,9 +276,12 @@ function createOverlayWindow() {
   });
 }
 
-// Create or show Settings Window
+// Create or show Main Application Window
 function openSettingsWindow(triggerRecorder = false, isFirstLaunch = false) {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
+    if (settingsWindow.isMinimized()) {
+      settingsWindow.restore();
+    }
     settingsWindow.show();
     settingsWindow.focus();
     if (isFirstLaunch) {
@@ -189,13 +294,13 @@ function openSettingsWindow(triggerRecorder = false, isFirstLaunch = false) {
   }
 
   settingsWindow = new BrowserWindow({
-    width: 580,
-    height: 740,
-    minWidth: 520,
-    minHeight: 640,
+    width: 620,
+    height: 780,
+    minWidth: 540,
+    minHeight: 660,
     resizable: true,
-    maximizable: false,
-    title: 'Listen - Settings',
+    maximizable: true,
+    title: 'Listen Dictation',
     backgroundColor: '#0f111a',
     autoHideMenuBar: true,
     webPreferences: {
@@ -221,10 +326,27 @@ function openSettingsWindow(triggerRecorder = false, isFirstLaunch = false) {
     }
   });
 
-  settingsWindow.on('closed', () => {
-    settingsWindow = null;
+  // Intercept window close: minimize to tray while listening continues in background
+  settingsWindow.on('close', (e) => {
+    if (!app.isQuitting && config.closeToTray !== false) {
+      e.preventDefault();
+      settingsWindow.hide();
+      if (process.platform === 'win32' && tray && !app.hasShownTrayTip) {
+        app.hasShownTrayTip = true;
+        try {
+          tray.displayBalloon({
+            title: 'Listen is running in the background',
+            content: `Listen is minimized to tray. Press ${getShortcutDisplay(config.shortcut)} anytime to dictate.`
+          });
+        } catch (err) {}
+      }
+    } else {
+      settingsWindow = null;
+    }
   });
 }
+
+const openMainWindow = openSettingsWindow;
 
 // System Tray setup
 function createTray() {
@@ -361,7 +483,8 @@ function handleShortcutPressed(isSecondary = false, isReleaseTrigger = false) {
   const mode = config.dictationMode || 'toggle';
 
   if (appState === 'idle') {
-    // Start Recording
+    // Start Recording - Mute background audio and pause music playback
+    pauseAndMuteAudio();
     activeMode = isSecondary ? 'smart_ai' : 'verbatim';
     appState = 'recording';
     updateTrayMenu();
@@ -396,8 +519,9 @@ function handleShortcutPressed(isSecondary = false, isReleaseTrigger = false) {
       }
     }
 
-    // Stop Recording & Begin Processing
+    // Stop Recording & Begin Processing - Restore background audio output
     stopKeyWatcher();
+    restoreAudio();
     appState = 'processing';
     updateTrayMenu();
     if (overlayWindow && !overlayWindow.isDestroyed()) {
@@ -729,6 +853,7 @@ async function transcribeAudio(buffer, mimeType) {
 function handleOverlayError(errorMessage) {
   appState = 'idle';
   stopKeyWatcher();
+  restoreAudio();
   if (!overlayWindow || overlayWindow.isDestroyed()) return;
 
   overlayWindow.webContents.send('show-error', errorMessage);
@@ -745,20 +870,43 @@ function handleOverlayError(errorMessage) {
 // IPC Handlers
 function setupIpcHandlers() {
   // Audio captured by overlay window
-  ipcMain.on('audio-captured', async (_event, { buffer, mimeType }) => {
+  ipcMain.on('audio-captured', async (_event, { buffer, mimeType, wavBuffer }) => {
     try {
       if (!buffer || buffer.byteLength === 0) {
+        restoreAudio();
         handleOverlayError('No audio captured');
         return;
       }
 
-      console.log(`Transcribing ${buffer.byteLength} bytes using ${config.provider}... (mode: ${activeMode})`);
-      const rawText = await transcribeAudio(buffer, mimeType);
+      console.log(`Transcribing audio... (mode: ${activeMode}, provider: ${config.provider})`);
+
+      let rawText = '';
+      const isOfflineMode = config.provider === 'offline' || config.model === 'offline-windows';
+
+      if (isOfflineMode) {
+        console.log('Transcribing via local offline Windows speech engine...');
+        const audioData = wavBuffer || buffer;
+        rawText = await transcribeAudioOffline(audioData);
+      } else {
+        // Try configured cloud provider first
+        try {
+          rawText = await transcribeAudio(buffer, mimeType);
+        } catch (cloudErr) {
+          console.warn('Cloud transcription failed:', cloudErr.message);
+          if (config.offlineFallback !== false) {
+            console.log('Automatically falling back to local offline speech engine...');
+            const audioData = wavBuffer || buffer;
+            rawText = await transcribeAudioOffline(audioData);
+          } else {
+            throw cloudErr;
+          }
+        }
+      }
 
       let transcribedText = '';
       if (rawText && rawText.trim()) {
-        console.log(`Raw Whisper transcription: "${rawText}"`);
-        if (config.aiIntelligence !== false) {
+        console.log(`Raw transcription: "${rawText}"`);
+        if (!isOfflineMode && config.aiIntelligence !== false) {
           console.log(`Applying AI Context Engine (mode: ${activeMode})...`);
           transcribedText = await enhanceTranscriptionWithAI(rawText, activeMode);
         } else {
@@ -769,6 +917,7 @@ function setupIpcHandlers() {
       if (!transcribedText) {
         console.log('No speech detected in audio.');
         appState = 'idle';
+        restoreAudio();
         if (overlayWindow && !overlayWindow.isDestroyed()) {
           overlayWindow.hide();
         }
@@ -832,6 +981,7 @@ function setupIpcHandlers() {
       }, 35);
     } catch (err) {
       console.error('Transcription error:', err);
+      restoreAudio();
       let displayMsg = 'Error: STT failed';
       if (err.message.includes('No API key')) {
         displayMsg = 'Error: Check API Key';
@@ -921,6 +1071,44 @@ function setupIpcHandlers() {
     return result;
   });
 
+  // Settings: Test Offline Speech Engine
+  ipcMain.handle('test-offline-engine', async () => {
+    const exePath = getOfflineTranscriberPath();
+    if (!exePath || !fs.existsSync(exePath)) {
+      return { success: false, error: 'Offline engine binary not found' };
+    }
+    return new Promise((resolve) => {
+      execFile(exePath, ['test'], { timeout: 8000 }, (err, stdout, stderr) => {
+        if (err) {
+          return resolve({ success: false, error: stderr || err.message });
+        }
+        resolve({ success: true, message: stdout ? stdout.trim() : 'OK' });
+      });
+    });
+  });
+
+  // Settings: Test Audio Control
+  ipcMain.handle('test-audio-control', async () => {
+    const exePath = getAudioControlPath();
+    if (!exePath || !fs.existsSync(exePath)) {
+      return { success: false, error: 'Audio control binary not found' };
+    }
+    return new Promise((resolve) => {
+      execFile(exePath, ['is-muted'], { timeout: 5000 }, (err, stdout, stderr) => {
+        if (err) {
+          return resolve({ success: false, error: stderr || err.message });
+        }
+        resolve({ success: true, message: 'Audio control ready (Master muted: ' + stdout.trim() + ')' });
+      });
+    });
+  });
+
+  // Application: Quit completely
+  ipcMain.on('quit-app', () => {
+    app.isQuitting = true;
+    app.quit();
+  });
+
   // Settings: Close
   ipcMain.on('close-settings', () => {
     if (settingsWindow && !settingsWindow.isDestroyed()) {
@@ -939,24 +1127,13 @@ app.whenReady().then(() => {
 
   console.log(`Listen app ready! Shortcuts: ${registeredShortcuts.join(', ')}`);
 
-  // First launch onboarding: Automatically show shortcut selector window right after install
-  if (!config.firstLaunchCompleted) {
-    setTimeout(() => {
-      openSettingsWindow(true, true);
-    }, 600);
-  } else if (process.platform === 'win32' && tray) {
-    try {
-      tray.displayBalloon({
-        title: 'Listen is Active in Background',
-        content: `Ready! Press ${getShortcutDisplay(config.shortcut)} or Ctrl+Space anywhere to dictate.`
-      });
-    } catch (e) {}
-  }
+  // ALWAYS open the main application window on launch so user can interact with the app immediately
+  setTimeout(() => {
+    openMainWindow(false, !config.firstLaunchCompleted);
+  }, 350);
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createOverlayWindow();
-    }
+    openMainWindow();
   });
 });
 

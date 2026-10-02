@@ -8,20 +8,26 @@ Press your custom keyboard shortcut from any application or screen, speak natura
 
 ## Features
 
-- 🎙️ **Zero-Focus-Steal Floating Pill**:
+- **Zero-Focus-Steal Floating Pill**:
   Frameless glassmorphic widget (`focusable: false`, `skipTaskbar: true`, `alwaysOnTop: true`) that sits elegantly at the top of your screen without stealing OS focus from Word, VSCode, Chrome, Slack, or any other active application.
-- ⚡ **Ultra-Fast Transcription**:
-  Powered by **Groq Whisper** (`whisper-large-v3-turbo`) transcribing in ~300ms, or **OpenAI Whisper** (`whisper-1`).
-- 🌊 **Real-Time Voice Waveform Visualizer**:
+- **Fully Offline Speech Recognition**:
+  Local offline speech recognition with zero internet connection required, powered by the native Windows Speech Platform engine. Automatically takes over when offline.
+- **Background Audio Muting & Media Pausing**:
+  Automatically mutes system audio output and pauses media players (YouTube, Spotify, VLC) during voice input so speaker sound does not bleed into the microphone. Audio is cleanly restored upon transcription.
+- **Desktop Application Lifecycle**:
+  Launching the application executable opens the main interactive dashboard directly. Window close minimizes to the background tray for persistent hotkey dictation, while explicit quit terminates the app and background processes completely.
+- **Ultra-Fast Transcription**:
+  Powered by Groq Whisper (`whisper-large-v3-turbo`) transcribing in ~300ms, OpenAI Whisper (`whisper-1`), or local offline engine.
+- **Real-Time Voice Waveform Visualizer**:
   Reactive audio frequency visualizer powered by Web Audio API `AnalyserNode` that pulses and animates to your actual voice volume.
-- ⌨️ **Interactive Shortcut Recorder**:
+- **Interactive Shortcut Recorder**:
   Configure any global hotkey (e.g., `Ctrl+Shift+Space`, `Alt+D`, `Ctrl+Shift+X`) using an interactive key recorder that captures modifier and key combinations on the fly.
-- 📋 **Automated Native Paste Injection**:
+- **Automated Native Paste Injection**:
   Places transcribed text into the system clipboard, waits for focus stabilization, and dispatches native simulated `Ctrl+V` (Windows) or `Cmd+V` (macOS) with zero console window popups.
-- 🎛️ **System Tray Integration**:
+- **System Tray Integration**:
   Runs unobtrusively in the background with quick access to Settings, Re-record Shortcut, and App Exit.
-- 🛡️ **Robust Error Handling**:
-  Displays brief red status warnings on the pill if the microphone is disconnected or an API key fails, auto-fading after 2 seconds without crashing.
+- **Robust Error Handling**:
+  Displays brief status warnings on the pill if the microphone is disconnected or an API key fails, auto-fading after 2 seconds without crashing.
 
 ---
 
@@ -37,7 +43,11 @@ listen/
 ├── preload-settings.js       # Secure contextBridge IPC for settings window
 ├── assets/
 │   ├── icon.png              # App icon
-│   └── tray-icon.png         # System tray icon
+│   ├── tray-icon.png         # System tray icon
+│   └── bin/                  # Native compiled helpers
+│       ├── audiocontrol.exe  # System audio muting and media control
+│       ├── keywatcher.exe    # Low-level keyboard state watcher for Push-to-Talk
+│       └── offlinetranscriber.exe # Local Windows offline speech recognition engine
 ├── overlay/
 │   ├── overlay.html          # Floating pill indicator DOM
 │   ├── overlay.css           # Glassmorphism, animations, state transitions
