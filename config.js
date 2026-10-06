@@ -15,7 +15,7 @@ const DEFAULT_CONFIG = {
   dictationMode: 'toggle', // 'toggle' | 'push_to_talk'
   language: 'en',
   pasteMethod: 'default', // 'default' (Ctrl+V) | 'terminal' (Ctrl+Shift+V) | 'shift_insert'
-  pasteDelayMs: 40,
+  pasteDelayMs: 20,
   restoreClipboard: true,
   soundFeedback: true,
   aiIntelligence: true,

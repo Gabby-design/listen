@@ -373,20 +373,33 @@ function encodeWav(samples, sampleRate = 16000) {
       const recordedBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
       const arrayBuffer = await recordedBlob.arrayBuffer();
 
-      // 1. Immediately send audio to main process (instant zero-delay dispatch)
-      if (window.overlayApi) {
-        window.overlayApi.sendAudio(arrayBuffer, recordedBlob.type, null, durationMs, estimatedRms);
+      let wavBuffer = null;
+      if (isCurrentSessionOffline) {
+        try {
+          if (audioContext) {
+            const decoded = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+            const resampled = resampleTo16kHz(decoded);
+            wavBuffer = encodeWav(resampled, 16000);
+          }
+        } catch (e) {
+          console.warn('WAV calculation skipped:', e);
+        }
       }
 
-      // 2. Transcode WAV asynchronously in background for offline speech fallback
-      if (audioContext) {
+      // 1. Immediately send audio to main process (instant zero-delay dispatch)
+      if (window.overlayApi) {
+        window.overlayApi.sendAudio(arrayBuffer, recordedBlob.type, wavBuffer, durationMs, estimatedRms);
+      }
+
+      // 2. Transcode WAV in background if in cloud mode for offline fallback
+      if (!isCurrentSessionOffline && audioContext) {
         setTimeout(async () => {
           try {
             const decoded = await audioContext.decodeAudioData(arrayBuffer.slice(0));
             const resampled = resampleTo16kHz(decoded);
-            const wavBuffer = encodeWav(resampled, 16000);
+            const bgWavBuffer = encodeWav(resampled, 16000);
             if (window.overlayApi && window.overlayApi.sendWavBuffer) {
-              window.overlayApi.sendWavBuffer(wavBuffer);
+              window.overlayApi.sendWavBuffer(bgWavBuffer);
             }
           } catch (e) {
             console.warn('Background WAV calculation skipped:', e);
@@ -399,8 +412,8 @@ function encodeWav(samples, sampleRate = 16000) {
       if (window.overlayApi) window.overlayApi.sendError('Mic error: ' + (e.error ? e.error.message : 'Unknown'));
     };
 
-    // 1000ms timeslice allows ultra-long recordings (hours) with low memory footprint
-    mediaRecorder.start(1000);
+    // 250ms timeslice ensures clean continuous slices with instant buffer flushing on stop
+    mediaRecorder.start(250);
   } catch (err) {
     console.error('Error starting audio recording:', err);
     if (window.overlayApi) {

@@ -4,12 +4,12 @@
   "redirects": [
     {
       "source": "/download",
-      "destination": "https://github.com/Gabby-design/listen/releases/download/v0.0.7/Listen-Setup-0.0.7.exe",
+      "destination": "https://github.com/Gabby-design/listen/releases/download/v0.0.8/Listen-Setup-0.0.8.exe",
       "permanent": false
     },
     {
       "source": "/download/windows",
-      "destination": "https://github.com/Gabby-design/listen/releases/download/v0.0.7/Listen-Setup-0.0.7.exe",
+      "destination": "https://github.com/Gabby-design/listen/releases/download/v0.0.8/Listen-Setup-0.0.8.exe",
       "permanent": false
     }
   ],

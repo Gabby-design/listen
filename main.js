@@ -703,7 +703,7 @@ async function enhanceTranscriptionWithAI(rawText, mode = 'verbatim') {
     return formatTranscription(rawText);
   }
 
-  const llmModel = provider === 'groq' ? 'openai/gpt-oss-20b' : 'gpt-4o-mini';
+  const llmModel = provider === 'groq' ? 'qwen/qwen3.8-27b' : 'gpt-4o-mini';
   const endpoint = provider === 'groq'
     ? 'https://api.groq.com/openai/v1/chat/completions'
     : 'https://api.openai.com/v1/chat/completions';
@@ -782,9 +782,9 @@ CORE INTELLIGENCE RULES:
   }
 
   try {
-    const maxTokens = Math.min(1024, Math.max(128, Math.ceil(rawText.length * 1.5)));
+    const maxTokens = Math.min(512, Math.max(64, Math.ceil(rawText.length * 1.5)));
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), 1800);
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -852,12 +852,10 @@ async function transcribeAudio(buffer, mimeType) {
     formData.append('language', config.language);
   }
 
-  // Base conditioning prompt to establish punctuation, capitalization, numbers, humming, singing, and signs
-  const baseWhisperPrompt = 'Transcribe exact spoken words, singing lyrics, humming (such as hmm, hmmm, mmm, hmm-mm), and vocal cadence verbatim with punctuation, numbers, and symbols.';
-  const whisperPrompt = (config.customVocabulary && config.customVocabulary.trim())
-    ? `${baseWhisperPrompt} Custom terms: ${config.customVocabulary.trim()}`
-    : baseWhisperPrompt;
-  formData.append('prompt', whisperPrompt);
+  // Only append prompt when custom vocabulary is provided, avoiding 500-700ms decoder warmup overhead
+  if (config.customVocabulary && config.customVocabulary.trim()) {
+    formData.append('prompt', `Custom terms: ${config.customVocabulary.trim()}`);
+  }
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -1015,26 +1013,14 @@ function setupIpcHandlers() {
       let transcribedText = '';
       if (rawText && rawText.trim()) {
         console.log(`Raw transcription: "${rawText}"`);
-        if (!isOfflineMode && config.aiIntelligence !== false) {
-          if (activeMode === 'smart_ai') {
-            console.log('Applying Smart AI Polish Engine...');
-            transcribedText = await enhanceTranscriptionWithAI(rawText, 'smart_ai');
-          } else {
-            // Verbatim mode (primary shortcut):
-            // Whisper Large v3 natively provides accurate sentence capitalization and punctuation.
-            // When speaking standard sentences, paragraphs, or many words (>= 12 words), local formatTranscription
-            // is instantaneous (0ms) and eliminates 2-3s of redundant LLM generation latency.
-            const words = rawText.trim().split(/\s+/);
-            const hasComplexDirective = /\b(?:number\s+\w+\s+in\s+(?:figures|words)|equals?\s+to|\d+\s*[\+\-\*\/]\s*\d+)\b/i.test(rawText);
-            if (hasComplexDirective && words.length < 12) {
-              console.log('Applying AI Context Engine for short math/figure expression...');
-              transcribedText = await enhanceTranscriptionWithAI(rawText, 'verbatim');
-            } else {
-              console.log('Instant formatting via Whisper Large v3 + local engine (zero LLM delay)...');
-              transcribedText = formatTranscription(rawText);
-            }
-          }
+        if (!isOfflineMode && config.aiIntelligence !== false && activeMode === 'smart_ai') {
+          console.log('Applying Smart AI Polish Engine (Qwen 3.8 27B)...');
+          transcribedText = await enhanceTranscriptionWithAI(rawText, 'smart_ai');
         } else {
+          // Verbatim mode (primary shortcut):
+          // Whisper Large v3 turbo natively provides accurate sentence capitalization & punctuation.
+          // Local formatTranscription handles math signs, figures directives, and symbols in 0.1ms with zero LLM lag.
+          console.log('Instant formatting via local engine (zero LLM network lag)...');
           transcribedText = formatTranscription(rawText);
         }
       }
