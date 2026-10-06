@@ -4,7 +4,7 @@ purpose: "The baton for unfinished work — what is happening now and what the n
 authority: canonical
 hosts_rules: []
 mirrors_rules: [RULE-GIT-001]
-last_reviewed: "2026-09-22"
+last_reviewed: "2026-10-06"
 ---
 
 # HANDOFF — listen
@@ -13,32 +13,34 @@ last_reviewed: "2026-09-22"
 
 **Implementation complete. Verification passed. Ready for owner review.**
 
-## Task: Listen v0.0.6 Multi-Tab Title-Aware Media Pause/Resume & Auto-Updater Feed
-**Objective:** Eliminate cross-tab playback resume collisions where pausing active media (e.g. YouTube video) resumed previously paused media in the same browser (e.g. YouTube Music). Standardize distribution on v0.0.6 with silent auto-updater feed.
+## Task: Website UI Synchronization with Desktop App & v0.0.7 Download Flow Audit
+**Objective:** Synchronize website UI to fully match desktop application visual design (live interactive fluid canvas orb, pixel-perfect settings window showcase, sunset orange & purple palette), verify direct installer downloads, and align v0.0.7 version indicators.
 
 **Work completed:**
-1. **Title-Aware Session Fingerprinting:**
-   - Updated `assets/bin/audiocontrol.cs` with `GetSessionMediaTitle()` and `GetSessionKey()`, generating unique composite keys (`SourceAppUserModelId:::Title`).
-   - `PauseIfPlaying()` queries `GetPlaybackInfo().PlaybackStatus == 4` (Playing) and records the exact session key into `%TEMP%\listen_media_state.txt`.
-   - `ResumeMedia()` checks each paused session (`PlaybackStatus == 5`) and calls `TryPlayAsync()` strictly if its exact composite key matches the recorded state. Previously paused tabs in the same browser (like YouTube Music) are ignored and stay paused.
-   - Recompiled `assets/bin/audiocontrol.exe` via `csc.exe`.
-2. **Version Bump & Distribution:**
-   - Bumped `package.json` to `0.0.6`.
-   - Rebuilt NSIS installer and updater artifacts (`dist/Listen Setup 0.0.6.exe`, `dist/latest.yml`, `dist/Listen Setup 0.0.6.exe.blockmap`).
+1. **Website UI Redesign (`index.html`):**
+   - Implemented real-time interactive fluid canvas orb matching `overlay/overlay.js` with organic Catmull-Rom spline wave simulation, ambient sunset glow, and interactive speech simulation flow (Idle -> Listening -> Processing -> Done with simulated text injection).
+   - Built interactive desktop app mockup matching `settings/settings.html` and `settings/settings.css` with tab switching (Shortcuts & Mode, AI & Offline Engine, Media & Audio Isolation, How It Works).
+   - Replaced legacy indigo colors with canonical Sunset Orange (`#f97316`) and Neon Purple (`#a855f7`) design tokens.
+   - Added download notification toast showing instant installer execution steps (1. Run Listen-Setup-0.0.7.exe, 2. Press Ctrl+Shift+Space, 3. Speak anywhere).
+2. **Download Flow Verification:**
+   - Validated direct installer download link pointing to live GitHub Release v0.0.7 (`https://github.com/Gabby-design/listen/releases/download/v0.0.7/Listen-Setup-0.0.7.exe` returns HTTP 302 Found).
+   - Standardized `package.json` electron-builder `artifactName` to `${productName}-Setup-${version}.${ext}`.
+3. **App Version Consistency:**
+   - Updated static version display in `settings/settings.html` from `v0.0.5` to `v0.0.7`.
+   - Updated `docs/ai/MEMORY.md` distribution references.
 
 **Files changed:**
-- `assets/bin/audiocontrol.cs` (recompiled to `assets/bin/audiocontrol.exe`)
+- `index.html`
+- `settings/settings.html`
 - `package.json`
 - `docs/ai/MEMORY.md`
 - `docs/ai/HANDOFF.md`
 
 **Verification:**
-- Live WinRT query confirmed multiple Chrome sessions differentiated by title: `chrome.exe:::Just the Two of Us` (Status 5) vs `chrome.exe:::Xiaomi 18 Fold: How Does This Happen?` (Status 4).
-- `npm test`: 100% test pass rate across formatters, audio filtering, and audiocontrol.
-
-**Next action:**
-Tag and push `v0.0.6` to GitHub, and attach `Listen-Setup-0.0.6.exe`, `latest.yml`, and `Listen-Setup-0.0.6.exe.blockmap` to GitHub Release `v0.0.6`.
+- `npm test`: 100% test pass rate across formatters, audio tap/silence filtering, and audiocontrol.
+- Node syntax check: Passed across all JS files.
+- Live HTTP query: GitHub Release v0.0.7 binary is live and downloadable.
 
 ## Git status
 
-No branch, stage, commit or history operation has been performed by an agent. Working tree contains modified and new helper files ready for owner review.
+No branch, stage, commit or history operation has been performed by an agent. Working tree contains modified files ready for owner review.

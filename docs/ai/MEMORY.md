@@ -18,7 +18,7 @@ Desktop voice dictation application built with Electron for Windows and macOS. V
 - Launch main application window on executable startup; minimize to system tray on window close when `closeToTray` is active; provide explicit quit button to terminate both window and background listening completely.
 - Use Sunset Orange (`#f97316`) and Neon Purple (`#a855f7`) as the signature visual identity across settings UI and the fluid floating orb.
 - Keep technical architecture explanation inside the installed desktop application ("How It Works" tab); keep the web landing page (`index.html`) focused on origin story, product mission, and downloads.
-- Standardize Windows distribution on the NSIS setup wizard (`Listen Setup 0.0.6.exe`) with `perMachine: true` (UAC prompt), removing portable target ambiguity.
+- Standardize Windows distribution on the NSIS setup wizard (`Listen-Setup-0.0.7.exe`) with `perMachine: true` (UAC prompt), removing portable target ambiguity.
 - Use Groq Whisper (`whisper-large-v3-turbo`) for cloud ultra-low latency transcription when online with automatic offline fallback.
 - Preserve system clipboard by snapshotting before injection and restoring 35ms after paste execution; clear clipboard if empty previously.
 - Frameless floating orb widget set to `focusable: false` to prevent stealing OS window focus from target cursor.

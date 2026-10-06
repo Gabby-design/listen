@@ -4,28 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Listen - Thought-Speed Desktop Voice Dictation</title>
+  <meta name="description" content="Production-ready desktop voice dictation app for Windows & macOS. Zero-focus-steal floating fluid orb, offline speech recognition, and instant paste injection.">
   <link rel="icon" type="image/png" href="assets/tray-icon.png">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#6366f1">
+  <meta name="theme-color" content="#f97316">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <style>
     :root {
-      --bg-dark: #090a10;
-      --bg-card: #13151f;
-      --bg-card-hover: #1a1d2b;
-      --accent: #ea580c;
-      --accent-orange: #f97316;
-      --accent-glow: rgba(249, 115, 22, 0.35);
+      --bg-primary: #090a10;
+      --bg-secondary: #12131d;
+      --bg-card: #181a28;
+      --bg-card-hover: #1e2133;
+      --bg-input: #0e0f17;
+      --accent: #f97316;
+      --accent-hover: #ea580c;
+      --accent-glow: rgba(249, 115, 22, 0.4);
       --accent-purple: #a855f7;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --border: rgba(255, 255, 255, 0.1);
-      --border-light: rgba(255, 255, 255, 0.18);
-      --success: #10b981;
-      --radius: 14px;
+      --accent-purple-glow: rgba(168, 85, 247, 0.35);
+      --accent-smart: #10b981;
+      --accent-smart-glow: rgba(16, 185, 129, 0.35);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-light: rgba(255, 255, 255, 0.16);
       --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
     }
 
     * {
@@ -36,27 +43,29 @@
     }
 
     body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 24px 20px 80px;
+      padding: 20px 20px 80px;
       overflow-x: hidden;
-      background-image: radial-gradient(circle at 50% 0%, rgba(234, 88, 12, 0.16) 0%, rgba(9, 10, 16, 0) 70%);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.18) 0%, rgba(9, 10, 16, 0) 65%),
+        radial-gradient(circle at 80% 30%, rgba(168, 85, 247, 0.12) 0%, rgba(9, 10, 16, 0) 50%);
       line-height: 1.6;
     }
 
-    /* Top Navigation */
+    /* Top Navigation Bar */
     .nav-bar {
-      max-width: 960px;
+      max-width: 1040px;
       width: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 0 32px;
-      border-bottom: 1px solid var(--border);
+      padding: 14px 0 28px;
+      border-bottom: 1px solid var(--border-color);
     }
 
     .brand-logo {
@@ -64,19 +73,19 @@
       align-items: center;
       gap: 12px;
       text-decoration: none;
-      color: var(--text-main);
+      color: var(--text-primary);
     }
 
     .brand-icon {
-      width: 38px;
-      height: 38px;
-      background: linear-gradient(135deg, #ea580c 0%, #a855f7 100%);
-      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-purple) 100%);
+      border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
-      box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);
+      box-shadow: 0 4px 14px var(--accent-glow);
     }
 
     .brand-icon svg {
@@ -92,12 +101,13 @@
 
     .brand-version {
       font-size: 11px;
-      background: rgba(234, 88, 12, 0.18);
-      border: 1px solid rgba(234, 88, 12, 0.4);
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.4);
       color: #fed7aa;
       padding: 2px 8px;
       border-radius: 999px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.04em;
     }
 
     .nav-links {
@@ -107,7 +117,7 @@
     }
 
     .nav-link {
-      color: var(--text-muted);
+      color: var(--text-secondary);
       text-decoration: none;
       font-size: 14px;
       font-weight: 500;
@@ -115,71 +125,10 @@
     }
 
     .nav-link:hover {
-      color: var(--text-main);
+      color: var(--text-primary);
     }
 
-    /* Main Container */
-    .container {
-      max-width: 960px;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 56px;
-      margin-top: 24px;
-    }
-
-    /* Hero Section */
-    .hero {
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 18px;
-      max-width: 820px;
-      margin: 0 auto;
-    }
-
-    .hero-badge {
-      background: rgba(234, 88, 12, 0.15);
-      border: 1px solid rgba(234, 88, 12, 0.4);
-      color: #fdba74;
-      font-size: 12.5px;
-      font-weight: 600;
-      padding: 6px 16px;
-      border-radius: 999px;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .hero h1 {
-      font-size: 48px;
-      font-weight: 800;
-      letter-spacing: -0.035em;
-      background: linear-gradient(135deg, #ffffff 0%, #fed7aa 50%, #c084fc 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      line-height: 1.15;
-    }
-
-    .hero p {
-      font-size: 18px;
-      color: var(--text-muted);
-      max-width: 700px;
-      line-height: 1.65;
-    }
-
-    .cta-group {
-      display: flex;
-      gap: 14px;
-      margin-top: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
+    /* Action Buttons */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -195,42 +144,241 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #ea580c 0%, #a855f7 100%);
-      color: white;
-      box-shadow: 0 4px 16px rgba(234, 88, 12, 0.4);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-purple) 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 18px var(--accent-glow);
     }
 
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 22px rgba(234, 88, 12, 0.55);
+      box-shadow: 0 6px 24px rgba(249, 115, 22, 0.55);
     }
 
     .btn-secondary {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--border);
-      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
     }
 
     .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--border-light);
       transform: translateY(-1px);
     }
 
     .nav-btn {
       padding: 7px 16px;
       font-size: 13.5px;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1040px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 64px;
+      margin-top: 32px;
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      max-width: 880px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      background: rgba(249, 115, 22, 0.12);
+      border: 1px solid rgba(249, 115, 22, 0.35);
+      color: #fdba74;
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 999px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-badge-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse-dot 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    .hero h1 {
+      font-size: 50px;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      background: linear-gradient(135deg, #ffffff 0%, #fed7aa 45%, #c084fc 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.15;
+    }
+
+    .hero p.hero-lead {
+      font-size: 18.5px;
+      color: var(--text-secondary);
+      max-width: 740px;
+      line-height: 1.65;
+    }
+
+    /* Interactive Fluid Orb Showcase */
+    .orb-showcase {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      margin: 12px 0 6px;
+    }
+
+    .orb-canvas-container {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .orb-ambient-glow {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(249, 115, 22, 0.45) 0%, rgba(168, 85, 247, 0.25) 50%, rgba(9, 10, 16, 0) 75%);
+      filter: blur(20px);
+      z-index: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+
+    #webOrbCanvas {
+      position: relative;
+      z-index: 1;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+    }
+
+    .orb-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(24, 26, 40, 0.85);
+      border: 1px solid var(--border-light);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .orb-status-pill:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .orb-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* Simulated Live Typing Box */
+    .live-demo-box {
+      width: 100%;
+      max-width: 600px;
+      background: rgba(14, 15, 23, 0.95);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .live-demo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 6px;
+    }
+
+    .live-demo-target {
+      display: flex;
+      align-items: center;
       gap: 6px;
+      color: #fed7aa;
+      font-weight: 600;
+    }
+
+    .live-demo-text {
+      font-size: 15px;
+      color: #f1f5f9;
+      min-height: 28px;
+      line-height: 1.5;
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    .live-cursor {
+      display: inline-block;
+      width: 7px;
+      height: 17px;
+      background-color: var(--accent);
+      vertical-align: middle;
+      margin-left: 2px;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    /* CTA Area */
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .download-meta {
-      font-size: 13px;
-      color: var(--text-muted);
+      font-size: 13.5px;
+      color: var(--text-secondary);
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       flex-wrap: wrap;
       justify-content: center;
-      margin-top: 6px;
     }
 
     .download-meta-item {
@@ -243,21 +391,323 @@
       color: rgba(255, 255, 255, 0.25);
     }
 
-    .banner-icon {
+    /* Download Toast Notification */
+    .download-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--accent);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 20px var(--accent-glow);
+      border-radius: var(--radius-md);
+      padding: 18px 22px;
+      max-width: 380px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 1000;
+      animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slide-up {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .download-toast-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .download-toast-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .download-toast-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      color: #e2e8f0;
+    }
+
+    .download-toast-close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    /* Interactive Desktop App Mockup */
+    .app-preview-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .mockup-window {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mockup-titlebar {
+      background: #0f1019;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .mockup-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .mockup-circle {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+    .circle-red { background: #ef4444; }
+    .circle-yellow { background: #f59e0b; }
+    .circle-green { background: #10b981; }
+
+    .mockup-titlebar-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mockup-header-tabs {
+      background: var(--bg-secondary);
+      display: flex;
+      gap: 6px;
+      padding: 10px 20px 0;
+      border-bottom: 1px solid var(--border-color);
+      overflow-x: auto;
+    }
+
+    .mockup-tab {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px 10px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .mockup-tab:hover {
+      color: var(--text-secondary);
+    }
+
+    .mockup-tab.active {
+      color: #ffffff;
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .mockup-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-height: 380px;
+    }
+
+    .mockup-tab-panel {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .mockup-tab-panel.active {
+      display: flex;
+    }
+
+    /* Mode cards inside mockup */
+    .mockup-mode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .mockup-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .mockup-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 16px rgba(249, 115, 22, 0.2);
+    }
+
+    .mockup-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mockup-badge {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(249, 115, 22, 0.15);
+      color: #fed7aa;
+    }
+
+    .mockup-badge.ptt {
+      background: rgba(168, 85, 247, 0.15);
+      color: #e9d5ff;
+    }
+
+    .mockup-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .mockup-card-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Shortcut Box inside Mockup */
+    .mockup-shortcut-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mockup-keys {
+      display: flex;
+      gap: 6px;
+    }
+
+    .mockup-key {
+      background: #1e2133;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+    }
+
+    .mockup-hint {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    /* Feature Grid */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-light);
+    }
+
+    .feature-accent-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-purple) 100%);
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      background: rgba(249, 115, 22, 0.12);
+      border: 1px solid rgba(249, 115, 22, 0.25);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       color: #fb923c;
-      flex-shrink: 0;
     }
 
-    /* Content Section Formatting */
-    .content-section {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+    .feature-icon svg {
+      width: 22px;
+      height: 22px;
     }
 
+    .feature-card h3 {
+      font-size: 18.5px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    /* Section Headers */
     .section-header {
       display: flex;
       flex-direction: column;
@@ -273,7 +723,7 @@
     }
 
     .section-title {
-      font-size: 28px;
+      font-size: 30px;
       font-weight: 800;
       letter-spacing: -0.02em;
       color: #ffffff;
@@ -281,145 +731,16 @@
 
     .section-lead {
       font-size: 16px;
-      color: var(--text-muted);
+      color: var(--text-secondary);
       line-height: 1.6;
       max-width: 800px;
     }
 
-    /* Editorial Narrative Cards */
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-      gap: 20px;
-    }
-
-    @media (max-width: 768px) {
-      .card-grid {
-        grid-template-columns: 1fr;
-      }
-      .hero h1 {
-        font-size: 34px;
-      }
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-      transition: transform 0.2s ease, border-color 0.2s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      border-color: var(--border-light);
-    }
-
-    .card-accent-line {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      background: linear-gradient(90deg, #ea580c 0%, #a855f7 100%);
-    }
-
-    .card-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: rgba(234, 88, 12, 0.12);
-      border: 1px solid rgba(234, 88, 12, 0.25);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #fb923c;
-      flex-shrink: 0;
-    }
-
-    .card-icon svg {
-      width: 22px;
-      height: 22px;
-    }
-
-    .card h3 {
-      font-size: 19px;
-      font-weight: 700;
-      color: #f8fafc;
-      letter-spacing: -0.01em;
-    }
-
-    .card p {
-      font-size: 14.5px;
-      color: #94a3b8;
-      line-height: 1.7;
-    }
-
-    /* Architecture / In-Depth Breakdown */
-    .tech-breakdown {
-      background: linear-gradient(135deg, rgba(18, 21, 36, 0.9) 0%, rgba(13, 16, 28, 0.95) 100%);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 36px 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
-    }
-
-    .tech-steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-    }
-
-    .tech-step-item {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 16px;
-      background: rgba(0, 0, 0, 0.25);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      border-radius: 10px;
-    }
-
-    .tech-step-number {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: rgba(99, 102, 241, 0.25);
-      border: 1px solid #6366f1;
-      color: #a5b4fc;
-      font-size: 13px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .tech-step-item h4 {
-      font-size: 16px;
-      font-weight: 700;
-      color: #e2e8f0;
-    }
-
-    .tech-step-item p {
-      font-size: 13.5px;
-      color: #94a3b8;
-      line-height: 1.6;
-    }
-
-    /* Quote / Philosophy Box */
+    /* Manifesto Box */
     .manifesto-box {
-      background: linear-gradient(135deg, rgba(234, 88, 12, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%);
-      border: 1px solid rgba(234, 88, 12, 0.3);
-      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      border-radius: var(--radius-md);
       padding: 36px 28px;
       text-align: center;
       display: flex;
@@ -430,11 +751,11 @@
     }
 
     .manifesto-box blockquote {
-      font-size: 20px;
+      font-size: 21px;
       font-weight: 500;
       color: #f1f5f9;
-      line-height: 1.65;
-      max-width: 720px;
+      line-height: 1.6;
+      max-width: 740px;
       font-style: italic;
     }
 
@@ -446,43 +767,40 @@
       text-transform: uppercase;
     }
 
-    /* Action on PC Notice */
-    .pc-action-banner {
-      background: rgba(234, 88, 12, 0.08);
-      border: 1px solid rgba(234, 88, 12, 0.3);
-      border-radius: 10px;
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      color: #fed7aa;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .pc-action-banner span {
-      font-size: 24px;
-      flex-shrink: 0;
-    }
-
     /* Footer */
     footer {
-      margin-top: 40px;
+      margin-top: 48px;
       text-align: center;
       font-size: 13.5px;
-      color: var(--text-muted);
+      color: var(--text-secondary);
       display: flex;
       flex-direction: column;
       gap: 8px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 24px;
+      width: 100%;
+      max-width: 1040px;
     }
 
     footer a {
-      color: #818cf8;
+      color: #c084fc;
       text-decoration: none;
     }
 
     footer a:hover {
       text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 34px;
+      }
+      .nav-links {
+        display: none;
+      }
+      .mockup-mode-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -492,7 +810,7 @@
   <header class="nav-bar">
     <a href="#" class="brand-logo">
       <div class="brand-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
           <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
           <line x1="12" y1="19" x2="12" y2="22"></line>
@@ -504,47 +822,85 @@
       </div>
     </a>
     <div class="nav-links">
-      <a href="#who-built-it" class="nav-link">Creator</a>
-      <a href="#what-its-for" class="nav-link">What It's For</a>
-      <a href="#why-built" class="nav-link">Why Listen</a>
+      <a href="#interactive-preview" class="nav-link">Desktop App</a>
+      <a href="#why-listen" class="nav-link">Why Listen</a>
+      <a href="#creator" class="nav-link">Creator</a>
       <a href="https://github.com/Gabby-design/listen" target="_blank" class="nav-link">GitHub</a>
       <a href="https://github.com/Gabby-design/listen/releases/download/v0.0.7/Listen-Setup-0.0.7.exe" class="btn btn-primary nav-btn download-btn" download="Listen-Setup-0.0.7.exe">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
           <line x1="12" y1="15" x2="12" y2="3"></line>
         </svg>
-        <span>Download</span>
+        <span>Download .exe</span>
       </a>
     </div>
   </header>
 
   <main class="container">
-    <!-- Hero -->
+    <!-- Hero Section -->
     <section class="hero">
-      <div class="hero-badge">The Thought-Speed Voice Engine</div>
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        <span>The Thought-Speed Voice Engine • Windows 10 & 11</span>
+      </div>
+
       <h1>Speak at the Speed of Thought.<br>Intelligent Dictation for Every App.</h1>
-      <p>
-        The human mind thinks at 150 words per minute. Physical keyboards bottleneck you to 40 WPM. Listen is an invisible, context-aware desktop companion that translates your spoken voice into polished, perfectly punctuated text wherever your cursor rests.
+
+      <p class="hero-lead">
+        The human mind thinks at 150 words per minute. Physical keyboards bottleneck you to 40. Listen is a native desktop companion with a zero-focus-steal floating fluid orb that translates your spoken voice into clean, punctuated text wherever your cursor rests.
       </p>
-      
+
+      <!-- Live Interactive Fluid Orb Showcase -->
+      <div class="orb-showcase">
+        <div class="orb-canvas-container" id="orb-trigger-box" title="Click to test fluid orb audio response">
+          <div class="orb-ambient-glow" id="orb-glow"></div>
+          <canvas id="webOrbCanvas" width="160" height="160"></canvas>
+        </div>
+
+        <button type="button" class="orb-status-pill" id="btn-toggle-demo">
+          <span class="orb-status-dot" id="orb-status-dot"></span>
+          <span id="orb-status-label">Click Orb or Here to Test Voice Pulse</span>
+        </button>
+
+        <div class="live-demo-box">
+          <div class="live-demo-header">
+            <span class="live-demo-target">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              Active Target: VS Code / Slack / Browser Cursor
+            </span>
+            <span id="demo-mode-badge">Verbatim Mode (0.0s latency)</span>
+          </div>
+          <div class="live-demo-text">
+            <span id="typewriter-text">"Press Ctrl+Shift+Space and speak naturally..."</span><span class="live-cursor"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Download Action Buttons -->
       <div class="cta-group">
-        <a href="https://github.com/Gabby-design/listen/releases/download/v0.0.7/Listen-Setup-0.0.7.exe" class="btn btn-primary download-btn" download="Listen-Setup-0.0.7.exe">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <a href="https://github.com/Gabby-design/listen/releases/download/v0.0.7/Listen-Setup-0.0.7.exe" class="btn btn-primary download-btn" download="Listen-Setup-0.0.7.exe" style="padding: 14px 28px; font-size: 15.5px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
           <span>Download Windows Setup (.exe)</span>
         </a>
-        <a href="https://github.com/Gabby-design/listen" target="_blank" class="btn btn-secondary">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+        <a href="https://github.com/Gabby-design/listen" target="_blank" class="btn btn-secondary" style="padding: 14px 24px; font-size: 15px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
           </svg>
           <span>View on GitHub</span>
         </a>
-        <button id="btn-install-pwa" class="btn btn-secondary" style="display: none;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+        <button id="btn-install-pwa" class="btn btn-secondary" style="display: none; padding: 14px 22px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
             <line x1="12" y1="18" x2="12.01" y2="18"></line>
           </svg>
@@ -554,232 +910,570 @@
 
       <div class="download-meta">
         <span class="download-meta-item">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          Direct Download (.exe)
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Direct Download (80 MB)
         </span>
         <span class="download-meta-dot">&bull;</span>
         <span class="download-meta-item">Windows 10 / 11 (64-bit)</span>
         <span class="download-meta-dot">&bull;</span>
         <span class="download-meta-item">Release <span class="brand-version-text">v0.0.7</span></span>
+        <span class="download-meta-dot">&bull;</span>
+        <span class="download-meta-item">100% Offline Dictation Built-in</span>
+      </div>
+    </section>
+
+    <!-- Interactive Desktop App Interface Showcase -->
+    <section class="app-preview-section" id="interactive-preview">
+      <div class="section-header">
+        <span class="section-tag">Desktop Experience</span>
+        <h2 class="section-title">The Real Desktop Application</h2>
+        <p class="section-lead">
+          Explore the actual settings dashboard and controls included in Listen. Clean, focused, and engineered to stay completely out of your way.
+        </p>
       </div>
 
-      <div class="pc-action-banner" style="margin-top: 14px;">
-        <span class="banner-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-        </span>
-        <div>
-          <strong>Desktop-First Action:</strong> The real-time speech engine and borderless floating orb operate natively on your computer once installed. No setup friction or manual API configuration required.
+      <div class="mockup-window">
+        <!-- Titlebar -->
+        <div class="mockup-titlebar">
+          <div class="mockup-controls">
+            <div class="mockup-circle circle-red"></div>
+            <div class="mockup-circle circle-yellow"></div>
+            <div class="mockup-circle circle-green"></div>
+          </div>
+          <div class="mockup-titlebar-title">
+            <div style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #f97316, #a855f7); display: inline-flex;"></div>
+            <span>Listen Dictation — Settings</span>
+            <span style="font-size: 11px; color: #10b981; font-weight: 700; margin-left: 6px;">● Ready</span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted);">v0.0.7</div>
+        </div>
+
+        <!-- Header Tabs -->
+        <div class="mockup-header-tabs" role="tablist">
+          <button type="button" class="mockup-tab active" data-mockup-tab="tab-preview-shortcuts">
+            🎙️ Shortcuts & Mode
+          </button>
+          <button type="button" class="mockup-tab" data-mockup-tab="tab-preview-ai">
+            🧠 AI & Offline Engine
+          </button>
+          <button type="button" class="mockup-tab" data-mockup-tab="tab-preview-audio">
+            ⚡ Media & Audio Isolation
+          </button>
+          <button type="button" class="mockup-tab" data-mockup-tab="tab-preview-architecture">
+            💡 How It Works
+          </button>
+        </div>
+
+        <!-- Mockup Body Content -->
+        <div class="mockup-body">
+          <!-- TAB 1: Shortcuts & Mode -->
+          <div class="mockup-tab-panel active" id="tab-preview-shortcuts">
+            <div>
+              <h4 style="font-size: 15px; color: #ffffff; margin-bottom: 4px;">Dictation Trigger Mode</h4>
+              <p style="font-size: 13px; color: var(--text-secondary);">Choose how you prefer to activate speech-to-text on your PC.</p>
+            </div>
+
+            <div class="mockup-mode-grid">
+              <div class="mockup-card selected" id="preview-mode-toggle">
+                <div class="mockup-card-header">
+                  <span class="mockup-badge">Hands-Free</span>
+                  <span style="color: var(--accent); font-size: 14px; font-weight: 700;">● Active</span>
+                </div>
+                <div class="mockup-card-title">Tap to Start / Stop</div>
+                <p class="mockup-card-desc">Press your shortcut once to start speaking. Speak as long as you want, then press it again to paste directly into your active window.</p>
+              </div>
+
+              <div class="mockup-card" id="preview-mode-ptt">
+                <div class="mockup-card-header">
+                  <span class="mockup-badge ptt">Push-to-Talk</span>
+                  <span style="color: var(--text-muted); font-size: 13px;">Optional</span>
+                </div>
+                <div class="mockup-card-title">Hold to Speak</div>
+                <p class="mockup-card-desc">Hold your shortcut keys while speaking. Release the keys to immediately finish and paste. Zero extra clicks or keystrokes.</p>
+              </div>
+            </div>
+
+            <div>
+              <h4 style="font-size: 15px; color: #ffffff; margin-bottom: 4px;">Primary Global Shortcut (Verbatim Dictation)</h4>
+              <p style="font-size: 13px; color: var(--text-secondary);">Types the exact words coming out of your mouth with automatic punctuation and mathematical operators.</p>
+            </div>
+
+            <div class="mockup-shortcut-box">
+              <div class="mockup-keys">
+                <span class="mockup-key">Ctrl</span>
+                <span class="mockup-key">Shift</span>
+                <span class="mockup-key">Space</span>
+              </div>
+              <span class="mockup-hint">Global Shortcut (Customizable in App)</span>
+            </div>
+          </div>
+
+          <!-- TAB 2: AI & Offline Engine -->
+          <div class="mockup-tab-panel" id="tab-preview-ai">
+            <div>
+              <h4 style="font-size: 15px; color: #ffffff; margin-bottom: 4px;">Speech Engine Architecture</h4>
+              <p style="font-size: 13px; color: var(--text-secondary);">Listen provides dual engines for maximum speed, privacy, and zero latency.</p>
+            </div>
+
+            <div class="mockup-mode-grid">
+              <div class="mockup-card selected">
+                <div class="mockup-card-header">
+                  <span class="mockup-badge" style="background: rgba(16, 185, 129, 0.15); color: #6ee7b7;">100% Offline Built-In</span>
+                  <span style="color: #10b981; font-weight: 700;">Zero Internet Needed</span>
+                </div>
+                <div class="mockup-card-title">Windows Speech Platform</div>
+                <p class="mockup-card-desc">Local <code>offlinetranscriber.exe</code> uses Windows DictationGrammar. 100% of audio stays strictly on your computer. Zero latency, zero cloud uploads.</p>
+              </div>
+
+              <div class="mockup-card">
+                <div class="mockup-card-header">
+                  <span class="mockup-badge" style="background: rgba(168, 85, 247, 0.15); color: #e9d5ff;">Cloud Fallback</span>
+                  <span style="color: #a855f7; font-weight: 700;">Sub-Second Whisper</span>
+                </div>
+                <div class="mockup-card-title">Groq Cloud Whisper API</div>
+                <p class="mockup-card-desc">When online and configured, leverages Groq's LPUs running Whisper Large V3 Turbo for instant transcription of singing, humming, and technical vocabulary.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: Media & Audio Isolation -->
+          <div class="mockup-tab-panel" id="tab-preview-audio">
+            <div>
+              <h4 style="font-size: 15px; color: #ffffff; margin-bottom: 4px;">Intelligent GSMTC Media Management</h4>
+              <p style="font-size: 13px; color: var(--text-secondary);">Never let background videos interfere with your speech.</p>
+            </div>
+
+            <div class="mockup-mode-grid">
+              <div class="mockup-card selected">
+                <div class="mockup-card-header">
+                  <span class="mockup-badge">Multi-Tab Aware</span>
+                  <span style="color: #10b981; font-weight: 700;">Active</span>
+                </div>
+                <div class="mockup-card-title">Title-Aware Pause & Resume</div>
+                <p class="mockup-card-desc">Queries Windows GSMTC sessions by title. Pauses only the specific playing tab (e.g. YouTube video), and resumes strictly that tab. Previously paused tabs (e.g. YouTube Music) remain untouched.</p>
+              </div>
+
+              <div class="mockup-card selected">
+                <div class="mockup-card-header">
+                  <span class="mockup-badge">Zero Focus Steal</span>
+                  <span style="color: #10b981; font-weight: 700;">Active</span>
+                </div>
+                <div class="mockup-card-title">Simulated Paste & Clipboard Shield</div>
+                <p class="mockup-card-desc">Injects text at your active cursor and snapshots clipboard state beforehand. Restores previous clipboard content within 35ms with zero dictation residue.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: How It Works -->
+          <div class="mockup-tab-panel" id="tab-preview-architecture">
+            <div>
+              <h4 style="font-size: 15px; color: #ffffff; margin-bottom: 4px;">The 4-Step Thought-Speed Pipeline</h4>
+              <p style="font-size: 13px; color: var(--text-secondary);">How Listen turns voice into text in under 400 milliseconds.</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;">
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+                <div style="color: var(--accent); font-weight: 700; font-size: 12px; margin-bottom: 4px;">STEP 1</div>
+                <h5 style="color: #fff; font-size: 14px; margin-bottom: 4px;">Global Hook</h5>
+                <p style="color: var(--text-secondary); font-size: 12.5px;">Shortcut registers globally without stealing keyboard focus from active application.</p>
+              </div>
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+                <div style="color: var(--accent); font-weight: 700; font-size: 12px; margin-bottom: 4px;">STEP 2</div>
+                <h5 style="color: #fff; font-size: 14px; margin-bottom: 4px;">Audio Ducking</h5>
+                <p style="color: var(--text-secondary); font-size: 12.5px;">GSMTC pauses active media and native peak meter verifies clear voice input.</p>
+              </div>
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+                <div style="color: var(--accent-purple); font-weight: 700; font-size: 12px; margin-bottom: 4px;">STEP 3</div>
+                <h5 style="color: #fff; font-size: 14px; margin-bottom: 4px;">Speech Engine</h5>
+                <p style="color: var(--text-secondary); font-size: 12.5px;">Processes audio through 100% offline DictationGrammar or Whisper LPU.</p>
+              </div>
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+                <div style="color: var(--accent-smart); font-weight: 700; font-size: 12px; margin-bottom: 4px;">STEP 4</div>
+                <h5 style="color: #fff; font-size: 14px; margin-bottom: 4px;">Instant Paste</h5>
+                <p style="color: var(--text-secondary); font-size: 12.5px;">Simulated Ctrl+V pastes formatted text instantly and resumes previous media.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Section 1: Who Built It -->
-    <section class="content-section" id="who-built-it">
+    <!-- Why Listen Section -->
+    <section class="content-section" id="why-listen">
       <div class="section-header">
-        <span class="section-tag">Origin & Team</span>
-        <h2 class="section-title">Who Built Listen?</h2>
+        <span class="section-tag">Core Advantages</span>
+        <h2 class="section-title">Why Listen Solves What Others Broke</h2>
         <p class="section-lead">
-          Crafted by Gabriel (Gabby) and independent software engineers obsessed with input bandwidth and user ergonomics.
+          Traditional dictation apps force you to open bloated windows, copy-paste manually, or send all private audio to cloud servers. Listen fixes the foundation.
         </p>
       </div>
 
-      <div class="card-grid">
-        <div class="card">
-          <div class="card-accent-line"></div>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="16 18 22 12 16 6"></polyline>
-              <polyline points="8 6 2 12 8 18"></polyline>
-            </svg>
-          </div>
-          <h3>The Maker's Story</h3>
-          <p>
-            Listen was conceived and built by Gabriel (Gabby)—a developer and writer tired of physical keyboard fatigue and the clumsy unreliability of existing speech tools. Every day, hours were lost stopping to correct typos, re-typing sentences, or waiting for bloated voice applications to respond. Gabriel engineered Listen to be the tool he needed himself: lightning fast, completely unobtrusive, and genuinely smart enough to understand natural speech rhythm.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="card-accent-line"></div>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <circle cx="12" cy="12" r="6"></circle>
-              <circle cx="12" cy="12" r="2"></circle>
-            </svg>
-          </div>
-          <h3>Our Mission & Philosophy</h3>
-          <p>
-            We believe that typing should never be the bottleneck of human intellect. The mechanical keyboard was invented in 1868—over 150 years ago. While computing hardware and AI have leaped forward exponentially, our primary interface for getting ideas into machines has remained practically unchanged. Listen exists to bridge that gap forever.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 2: What It's Meant For -->
-    <section class="content-section" id="what-its-for">
-      <div class="section-header">
-        <span class="section-tag">Purpose & Scope</span>
-        <h2 class="section-title">What Is Listen Meant For?</h2>
-        <p class="section-lead">
-          A seamless, universal voice input layer designed for thinkers, coders, writers, researchers, and builders.
-        </p>
-      </div>
-
-      <div class="card-grid">
-        <div class="card">
-          <div class="card-accent-line"></div>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-accent-line"></div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </svg>
           </div>
-          <h3>Frictionless Thought Capture</h3>
+          <h3>150 WPM vs 40 WPM</h3>
           <p>
-            Listen is built for high-velocity creation. When you are writing a long document, drafting an architectural design RFC, replying to urgent Slack messages, or jotting down ideas in your personal knowledge base, you shouldn't have to pause your stream of consciousness. Press your shortcut, speak continuously, and let Listen lay down your thoughts in real time.
+            Human thought and speech effortlessly produce 150 words per minute. Average keyboard typing hovers at 40 WPM. Listen removes the mechanical tax on your cognition so your ideas flow directly to the screen.
           </p>
         </div>
 
-        <div class="card">
-          <div class="card-accent-line"></div>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-              <line x1="8" y1="21" x2="16" y2="21"></line>
-              <line x1="12" y1="17" x2="12" y2="21"></line>
-            </svg>
-          </div>
-          <h3>Universal Desktop Integration</h3>
-          <p>
-            Unlike voice apps that lock you into their own proprietary notepad or web window, Listen integrates directly with your operating system. It works transparently inside <strong>VS Code, Microsoft Word, Google Chrome, Slack, Notion, Windows Terminal, Obsidian, Discord, and Telegram</strong>. Wherever you can click a cursor, Listen can dictate.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 3: Why It Was Built -->
-    <section class="content-section" id="why-built">
-      <div class="section-header">
-        <span class="section-tag">The Philosophy</span>
-        <h2 class="section-title">Why Listen Was Built</h2>
-        <p class="section-lead">
-          The fundamental flaws of traditional dictation tools—and how Listen solves them in writing.
-        </p>
-      </div>
-
-      <div class="card-grid">
-        <div class="card">
-          <div class="card-accent-line"></div>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
-              <line x1="6" y1="8" x2="6" y2="8"></line>
-              <line x1="10" y1="8" x2="10" y2="8"></line>
-              <line x1="14" y1="8" x2="14" y2="8"></line>
-              <line x1="18" y1="8" x2="18" y2="8"></line>
-              <line x1="6" y1="12" x2="6" y2="12"></line>
-              <line x1="18" y1="12" x2="18" y2="12"></line>
-              <line x1="8" y1="16" x2="16" y2="16"></line>
-            </svg>
-          </div>
-          <h3>The 150 WPM vs 40 WPM Bottleneck</h3>
-          <p>
-            Human vocal cords and thought processes effortlessly produce 120 to 160 words per minute. Yet average typing speed hovers between 35 and 50 WPM. That means approximately 70% of your cognitive velocity is lost waiting for your fingers to hit mechanical switches. Ideas get lost, arguments lose their natural cadence, and mental stamina drains.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="card-accent-line"></div>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
-              <rect x="9" y="9" width="6" height="6"></rect>
-              <line x1="9" y1="1" x2="9" y2="4"></line>
-              <line x1="15" y1="1" x2="15" y2="4"></line>
-              <line x1="9" y1="20" x2="9" y2="23"></line>
-              <line x1="15" y1="20" x2="15" y2="23"></line>
-              <line x1="20" y1="9" x2="23" y2="9"></line>
-              <line x1="20" y1="14" x2="23" y2="14"></line>
-              <line x1="1" y1="9" x2="4" y2="9"></line>
-              <line x1="1" y1="14" x2="4" y2="14"></line>
-            </svg>
-          </div>
-          <h3>Why Legacy Speech Tools Failed</h3>
-          <p>
-            Traditional speech-to-text engines are rigid, unforgiving, and literal. When you say <em>"number one clean the room then step two buy milk"</em>, legacy tools awkwardly spell out <em>"number 1 clean the room then step 2 buy milk"</em>. They cannot distinguish when "one" is a digit or conversational English. They don't place question marks when you ask a question, they ignore spoken brackets, and they drop words if you pause for breath.
-          </p>
-        </div>
-
-        <div class="card">
-          <div class="card-accent-line"></div>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="feature-card">
+          <div class="feature-accent-line"></div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
             </svg>
           </div>
-          <h3>The Problem with Window Bloat</h3>
+          <h3>Zero Focus Stealing</h3>
           <p>
-            Other dictation apps force you to open a heavy desktop window that steals your keyboard focus, interrupts your visual layout, and requires manual copy-pasting. Listen was built to be an invisible ghost: a borderless, organic fluid orb that hovers at your screen edge only when active, never stealing active cursor focus.
+            The borderless fluid orb hovers at your screen edge without stealing focus from your active window. Type in VS Code, Slack, Notion, Word, or Chrome without ever clicking away from your cursor.
           </p>
         </div>
 
-        <div class="card">
-          <div class="card-accent-line"></div>
-          <div class="card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="feature-card">
+          <div class="feature-accent-line"></div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
           </div>
-          <h3>Developer-Managed Simplicity</h3>
+          <h3>100% Offline Dictation</h3>
           <p>
-            We believe everyday users shouldn't have to navigate confusing cloud developer consoles, set up credit cards, or generate API keys just to dictate notes. Listen comes pre-configured and managed by developers out of the box. Install the setup wizard, select your preferred shortcut, and start dictating immediately.
+            Operates completely offline using native Windows Speech Platform APIs. Your voice never leaves your hardware unless you explicitly configure cloud Whisper mode. Complete privacy by default.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-accent-line"></div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18V5l12-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+          </div>
+          <h3>Smart Media Pausing</h3>
+          <p>
+            Targeted GSMTC media session inspection pauses only active playing audio (YouTube, Spotify) and resumes strictly that tab. Previously paused background tabs are never accidentally triggered.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-accent-line"></div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h3>Figures & Symbols Healing</h3>
+          <p>
+            Automatically formats figures and words ("2 + 2 = 4", "twenty percent" to "20%"), converts spoken punctuation, strips accidental hotkey taps under 400ms, and filters repetitive silence hallucinations.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-accent-line"></div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </div>
+          <h3>Zero-Distraction Updater</h3>
+          <p>
+            Silent in-app background auto-updater via GitHub Releases keeps you on the latest version. Receive an unobtrusive notification and restart whenever you are ready.
           </p>
         </div>
       </div>
+    </section>
 
-      <div class="manifesto-box">
-        <blockquote>
-          "Typing is a mechanical tax on human thought. Listen eliminates the tax—giving you a direct neural link between your voice and your screen."
-        </blockquote>
-        <span class="manifesto-author">Listen Product Manifesto</span>
+    <!-- Manifesto Quote -->
+    <div class="manifesto-box">
+      <blockquote>
+        "Typing is a mechanical tax on human thought. Listen eliminates the tax—giving you a direct neural link between your voice and your screen."
+      </blockquote>
+      <span class="manifesto-author">Listen Product Manifesto</span>
+    </div>
+
+    <!-- Creator Section -->
+    <section class="content-section" id="creator">
+      <div class="section-header">
+        <span class="section-tag">The Story</span>
+        <h2 class="section-title">Who Built Listen?</h2>
+        <p class="section-lead">
+          Conceived and built by Gabriel (Gabby) — an engineer and writer exhausted by mechanical typing fatigue and clunky, slow voice apps. Listen was built to be the tool he needed every single day: lightning-fast, invisible, and genuinely intelligent.
+        </p>
       </div>
-      <div class="cta-group" style="margin-top: 12px;">
+
+      <div class="cta-group" style="margin-top: 8px;">
         <a href="https://github.com/Gabby-design/listen/releases/download/v0.0.7/Listen-Setup-0.0.7.exe" class="btn btn-primary download-btn" download="Listen-Setup-0.0.7.exe" style="padding: 14px 28px; font-size: 15.5px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          <span>Download Listen Windows Setup (.exe)</span>
+          <span>Download Listen for Windows (v0.0.7)</span>
         </a>
-        <button id="btn-install-pwa-bottom" class="btn btn-secondary" style="padding: 14px 24px; font-size: 15px; display: none;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-            <line x1="12" y1="18" x2="12.01" y2="18"></line>
-          </svg>
-          <span>Install Mobile Web App</span>
-        </button>
       </div>
-
-      <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 14px;">
-        System Requirements: Windows 10/11 (64-bit) &bull; Working Microphone &bull; Internet Connection
-      </p>
     </section>
 
     <!-- Footer -->
     <footer>
       <p>Listen Dictation &copy; 2026. Built by Gabriel (Gabby) & the Listen Engineering Team.</p>
-      <p>Open source repository on <a href="https://github.com/Gabby-design/listen" target="_blank">GitHub</a>.</p>
+      <p>Open source repository on <a href="https://github.com/Gabby-design/listen" target="_blank">GitHub</a> &bull; Version 0.0.7</p>
     </footer>
   </main>
 
+  <!-- Download Toast Guidance -->
+  <div class="download-toast" id="download-toast">
+    <button type="button" class="download-toast-close" id="btn-close-toast">&times;</button>
+    <div class="download-toast-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <span>Downloading Listen Setup v0.0.7</span>
+    </div>
+    <div class="download-toast-desc">
+      Your Windows installer is downloading directly from GitHub Releases.
+    </div>
+    <div class="download-toast-steps">
+      <div><strong>1. Run:</strong> Open <code>Listen-Setup-0.0.7.exe</code></div>
+      <div><strong>2. Trigger:</strong> Press <code>Ctrl+Shift+Space</code></div>
+      <div><strong>3. Speak:</strong> Words appear wherever your cursor is</div>
+    </div>
+  </div>
+
   <script>
-    // Dynamic GitHub latest release resolver with direct fallback
+    // -------------------------------------------------------------
+    // 1. Live Interactive Fluid Orb Canvas (Ported from overlay.js)
+    // -------------------------------------------------------------
+    const canvas = document.getElementById('webOrbCanvas');
+    const ctx = canvas.getContext('2d');
+    const orbGlow = document.getElementById('orb-glow');
+    const orbStatusLabel = document.getElementById('orb-status-label');
+    const orbStatusDot = document.getElementById('orb-status-dot');
+    const typewriterText = document.getElementById('typewriter-text');
+    const demoModeBadge = document.getElementById('demo-mode-badge');
+
+    const dpr = window.devicePixelRatio || 1;
+    const W = 160;
+    const H = 160;
+    const CX = W / 2;
+    const CY = H / 2;
+    const BASE_RADIUS = 32;
+
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+
+    let currentState = 'idle'; // 'idle' | 'listening' | 'processing' | 'done'
+    let time = 0;
+    let voiceEnergy = 0;
+    let demoTimer = null;
+
+    function drawContour(points, color, lineWidth, shadowColor, shadowBlur) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+
+      for (let i = 0; i < points.length; i++) {
+        const p0 = points[(i - 1 + points.length) % points.length];
+        const p1 = points[i];
+        const p2 = points[(i + 1) % points.length];
+        const p3 = points[(i + 2) % points.length];
+
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+      }
+      ctx.closePath();
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.shadowColor = shadowColor;
+      ctx.shadowBlur = shadowBlur;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function renderOrb() {
+      ctx.clearRect(0, 0, W, H);
+
+      // Simulation audio fluctuations
+      if (currentState === 'listening') {
+        const targetEnergy = 0.4 + Math.sin(time * 6) * 0.35 + Math.random() * 0.25;
+        voiceEnergy += (targetEnergy - voiceEnergy) * 0.3;
+      } else {
+        voiceEnergy *= 0.92;
+      }
+
+      const speed = currentState === 'processing' ? 0.09 : 0.038;
+      time += speed;
+
+      let primaryGlow = 'rgba(249, 115, 22, 0.95)';
+      let secondaryGlow = 'rgba(168, 85, 247, 0.85)';
+      let coreGlow = 'rgba(249, 115, 22, 0.25)';
+      let shadowCol = '#f97316';
+      let shadowBlurVal = 14 + voiceEnergy * 16;
+
+      if (currentState === 'done') {
+        primaryGlow = 'rgba(52, 211, 153, 0.95)';
+        secondaryGlow = 'rgba(16, 185, 129, 0.75)';
+        coreGlow = 'rgba(16, 185, 129, 0.25)';
+        shadowCol = '#10b981';
+      }
+
+      // 1. Dark core with radial glow
+      const coreGrad = ctx.createRadialGradient(CX, CY, 4, CX, CY, BASE_RADIUS + 8);
+      coreGrad.addColorStop(0, 'rgba(9, 10, 16, 0.9)');
+      coreGrad.addColorStop(0.7, coreGlow);
+      coreGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.save();
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.arc(CX, CY, BASE_RADIUS + 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 2. Layered Organic Contours
+      const numLayers = 4;
+      const numSteps = 48;
+
+      for (let l = 0; l < numLayers; l++) {
+        const layerOffset = l * 1.6;
+        const layerRadius = BASE_RADIUS - l * 3.5;
+        const waveAmp = (4.0 + voiceEnergy * 9.5) * (1 - l * 0.18);
+        const points = [];
+
+        for (let i = 0; i < numSteps; i++) {
+          const theta = (i / numSteps) * Math.PI * 2;
+          const noise = 
+            Math.sin(theta * 3 + time * 2.2 + layerOffset) * waveAmp * 0.6 +
+            Math.cos(theta * 2 - time * 1.8 + layerOffset) * waveAmp * 0.4 +
+            Math.sin(theta * 5 + time * 3.2) * (waveAmp * 0.25);
+
+          const r = layerRadius + noise;
+          points.push({
+            x: CX + Math.cos(theta) * r,
+            y: CY + Math.sin(theta) * r
+          });
+        }
+
+        const col = l % 2 === 0 ? primaryGlow : secondaryGlow;
+        const width = (l === 0) ? 2.5 : 1.6;
+        drawContour(points, col, width, shadowCol, shadowBlurVal);
+      }
+
+      requestAnimationFrame(renderOrb);
+    }
+    requestAnimationFrame(renderOrb);
+
+    // Interactive Demo Simulation Flow
+    function triggerDemoSimulation() {
+      if (demoTimer) clearTimeout(demoTimer);
+
+      // Phase 1: Listening
+      currentState = 'listening';
+      orbStatusLabel.textContent = 'Listening to speech... (Try speaking)';
+      orbStatusDot.style.background = '#f97316';
+      orbGlow.style.background = 'radial-gradient(circle, rgba(249, 115, 22, 0.6) 0%, rgba(168, 85, 247, 0.4) 50%, transparent 75%)';
+      demoModeBadge.textContent = 'Speech Captured at 150 WPM';
+      typewriterText.textContent = 'Transcribing: "Drafting architecture specs with thought-speed voice..."';
+
+      // Phase 2: Processing after 2.5s
+      demoTimer = setTimeout(() => {
+        currentState = 'processing';
+        orbStatusLabel.textContent = 'Formatting & figures healing...';
+        orbStatusDot.style.background = '#a855f7';
+        orbGlow.style.background = 'radial-gradient(circle, rgba(168, 85, 247, 0.6) 0%, rgba(249, 115, 22, 0.3) 50%, transparent 75%)';
+        demoModeBadge.textContent = 'Applying Punctuation & Math Healing';
+
+        // Phase 3: Done after 1.2s
+        demoTimer = setTimeout(() => {
+          currentState = 'done';
+          orbStatusLabel.textContent = 'Pasted directly at cursor!';
+          orbStatusDot.style.background = '#10b981';
+          orbGlow.style.background = 'radial-gradient(circle, rgba(16, 185, 129, 0.6) 0%, rgba(52, 211, 153, 0.3) 50%, transparent 75%)';
+          demoModeBadge.textContent = 'Simulated Ctrl+V Injected • Clipboard Clean';
+          typewriterText.textContent = '"Drafting architecture specs with thought-speed voice. Zero typos, zero delay."';
+
+          // Reset to idle after 3s
+          demoTimer = setTimeout(() => {
+            currentState = 'idle';
+            orbStatusLabel.textContent = 'Click Orb or Here to Test Voice Pulse';
+            orbStatusDot.style.background = '#f97316';
+            orbGlow.style.background = 'radial-gradient(circle, rgba(249, 115, 22, 0.45) 0%, rgba(168, 85, 247, 0.25) 50%, transparent 75%)';
+            demoModeBadge.textContent = 'Verbatim Mode (0.0s latency)';
+          }, 3200);
+        }, 1200);
+      }, 2500);
+    }
+
+    document.getElementById('orb-trigger-box').addEventListener('click', triggerDemoSimulation);
+    document.getElementById('btn-toggle-demo').addEventListener('click', triggerDemoSimulation);
+
+    // -------------------------------------------------------------
+    // 2. Interactive Desktop App Mockup Tab Switching
+    // -------------------------------------------------------------
+    const mockupTabs = document.querySelectorAll('.mockup-tab');
+    const mockupPanels = document.querySelectorAll('.mockup-tab-panel');
+
+    mockupTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetId = tab.getAttribute('data-mockup-tab');
+        mockupTabs.forEach(t => t.classList.toggle('active', t === tab));
+        mockupPanels.forEach(p => p.classList.toggle('active', p.id === targetId));
+      });
+    });
+
+    // Mockup card interactive toggle
+    const toggleCard = document.getElementById('preview-mode-toggle');
+    const pttCard = document.getElementById('preview-mode-ptt');
+    if (toggleCard && pttCard) {
+      toggleCard.addEventListener('click', () => {
+        toggleCard.classList.add('selected');
+        pttCard.classList.remove('selected');
+      });
+      pttCard.addEventListener('click', () => {
+        pttCard.classList.add('selected');
+        toggleCard.classList.remove('selected');
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 3. Download Handling & Direct GitHub Release Resolution
+    // -------------------------------------------------------------
+    const downloadToast = document.getElementById('download-toast');
+    const btnCloseToast = document.getElementById('btn-close-toast');
+
+    if (btnCloseToast) {
+      btnCloseToast.addEventListener('click', () => {
+        downloadToast.style.display = 'none';
+      });
+    }
+
+    // Direct download click notification
+    document.querySelectorAll('.download-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (downloadToast) {
+          downloadToast.style.display = 'flex';
+          setTimeout(() => {
+            if (downloadToast) downloadToast.style.display = 'none';
+          }, 8000);
+        }
+      });
+    });
+
+    // Fetch latest GitHub release dynamically with resilient fallback
     fetch('https://api.github.com/repos/Gabby-design/listen/releases/latest')
       .then(res => res.json())
       .then(data => {
@@ -795,40 +1489,41 @@
           document.querySelectorAll('.brand-version-text').forEach(el => el.textContent = data.tag_name);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        // Fallback already baked into the direct links:
+        // https://github.com/Gabby-design/listen/releases/download/v0.0.7/Listen-Setup-0.0.7.exe
+      });
 
-    // PWA Service Worker & Install Prompt handling
+    // -------------------------------------------------------------
+    // 4. PWA Service Worker & Install Prompt handling
+    // -------------------------------------------------------------
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((e) => console.log('SW registration error:', e));
     }
 
     let deferredPrompt = null;
     const btnInstall = document.getElementById('btn-install-pwa');
-    const btnInstallBottom = document.getElementById('btn-install-pwa-bottom');
 
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
       if (btnInstall) btnInstall.style.display = 'inline-flex';
-      if (btnInstallBottom) btnInstallBottom.style.display = 'inline-flex';
     });
 
-    async function triggerPwaInstall() {
-      if (!deferredPrompt) {
-        alert('To install on mobile:\n• Android / Chrome: Open menu and select "Install App".\n• iPhone / Safari: Tap Share and select "Add to Home Screen".\n\nOnce added, it opens as a full native app.');
-        return;
-      }
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        if (btnInstall) btnInstall.style.display = 'none';
-        if (btnInstallBottom) btnInstallBottom.style.display = 'none';
-      }
-      deferredPrompt = null;
+    if (btnInstall) {
+      btnInstall.addEventListener('click', async () => {
+        if (!deferredPrompt) {
+          alert('To install as an app:\n• Chrome / Edge: Click the install icon in your address bar.\n• Safari: Tap Share -> Add to Home Screen.');
+          return;
+        }
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          btnInstall.style.display = 'none';
+        }
+        deferredPrompt = null;
+      });
     }
-
-    if (btnInstall) btnInstall.addEventListener('click', triggerPwaInstall);
-    if (btnInstallBottom) btnInstallBottom.addEventListener('click', triggerPwaInstall);
   </script>
 </body>
 </html>
