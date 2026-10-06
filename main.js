@@ -521,9 +521,10 @@ function handleShortcutPressed(isSecondary = false, isReleaseTrigger = false) {
     updateTrayMenu();
 
     if (overlayWindow && !overlayWindow.isDestroyed()) {
+      const isOfflineMode = config.provider === 'offline' || config.model === 'offline-windows';
       overlayWindow.webContents.send('set-sound-feedback', config.soundFeedback !== false);
       overlayWindow.webContents.send('reset-state');
-      overlayWindow.webContents.send('start-recording');
+      overlayWindow.webContents.send('start-recording', { isOffline: isOfflineMode });
 
       // Show without stealing focus from active window/cursor
       if (process.platform === 'darwin') {
@@ -702,7 +703,7 @@ async function enhanceTranscriptionWithAI(rawText, mode = 'verbatim') {
     return formatTranscription(rawText);
   }
 
-  const llmModel = provider === 'groq' ? 'qwen/qwen3.8-27b' : 'gpt-4o-mini';
+  const llmModel = provider === 'groq' ? 'openai/gpt-oss-20b' : 'gpt-4o-mini';
   const endpoint = provider === 'groq'
     ? 'https://api.groq.com/openai/v1/chat/completions'
     : 'https://api.openai.com/v1/chat/completions';
@@ -781,8 +782,9 @@ CORE INTELLIGENCE RULES:
   }
 
   try {
+    const maxTokens = Math.min(1024, Math.max(128, Math.ceil(rawText.length * 1.5)));
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -797,7 +799,7 @@ CORE INTELLIGENCE RULES:
           { role: 'user', content: rawText }
         ],
         temperature: mode === 'smart_ai' ? 0.2 : 0.0,
-        max_tokens: 4096
+        max_tokens: maxTokens
       }),
       signal: controller.signal
     });
@@ -915,9 +917,17 @@ function setupIpcHandlers() {
     updateTrayMenu();
   });
 
+  let latestWavBuffer = null;
+
+  // Background WAV ready from overlay for offline fallback
+  ipcMain.on('wav-buffer-ready', (_event, { wavBuffer }) => {
+    latestWavBuffer = wavBuffer;
+  });
+
   // Audio captured by overlay window
   ipcMain.on('audio-captured', async (_event, { buffer, mimeType, wavBuffer, durationMs, rms }) => {
     try {
+      latestWavBuffer = wavBuffer || latestWavBuffer || null;
       if (!buffer || buffer.byteLength === 0) {
         restoreAudio();
         handleOverlayError('No audio captured');
@@ -959,7 +969,7 @@ function setupIpcHandlers() {
 
       if (isOfflineMode) {
         console.log('Transcribing via local offline Windows speech engine...');
-        const audioData = wavBuffer || buffer;
+        const audioData = wavBuffer || latestWavBuffer || buffer;
         rawText = await transcribeAudioOffline(audioData);
       } else {
         // Try configured cloud provider first
@@ -969,7 +979,7 @@ function setupIpcHandlers() {
           console.warn('Cloud transcription failed:', cloudErr.message);
           if (config.offlineFallback !== false) {
             console.log('Automatically falling back to local offline speech engine...');
-            const audioData = wavBuffer || buffer;
+            const audioData = wavBuffer || latestWavBuffer || buffer;
             rawText = await transcribeAudioOffline(audioData);
           } else {
             throw cloudErr;
@@ -1006,8 +1016,24 @@ function setupIpcHandlers() {
       if (rawText && rawText.trim()) {
         console.log(`Raw transcription: "${rawText}"`);
         if (!isOfflineMode && config.aiIntelligence !== false) {
-          console.log(`Applying AI Context Engine (mode: ${activeMode})...`);
-          transcribedText = await enhanceTranscriptionWithAI(rawText, activeMode);
+          if (activeMode === 'smart_ai') {
+            console.log('Applying Smart AI Polish Engine...');
+            transcribedText = await enhanceTranscriptionWithAI(rawText, 'smart_ai');
+          } else {
+            // Verbatim mode (primary shortcut):
+            // Whisper Large v3 natively provides accurate sentence capitalization and punctuation.
+            // When speaking standard sentences, paragraphs, or many words (>= 12 words), local formatTranscription
+            // is instantaneous (0ms) and eliminates 2-3s of redundant LLM generation latency.
+            const words = rawText.trim().split(/\s+/);
+            const hasComplexDirective = /\b(?:number\s+\w+\s+in\s+(?:figures|words)|equals?\s+to|\d+\s*[\+\-\*\/]\s*\d+)\b/i.test(rawText);
+            if (hasComplexDirective && words.length < 12) {
+              console.log('Applying AI Context Engine for short math/figure expression...');
+              transcribedText = await enhanceTranscriptionWithAI(rawText, 'verbatim');
+            } else {
+              console.log('Instant formatting via Whisper Large v3 + local engine (zero LLM delay)...');
+              transcribedText = formatTranscription(rawText);
+            }
+          }
         } else {
           transcribedText = formatTranscription(rawText);
         }
@@ -1056,7 +1082,7 @@ function setupIpcHandlers() {
       appState = 'idle';
 
       // 5. Wait brief focus stability delay and trigger paste
-      const delay = config.pasteDelayMs || 40;
+      const delay = config.pasteDelayMs || 25;
       const pasteMethod = config.pasteMethod || 'default';
       await simulatePaste(delay, pasteMethod);
 

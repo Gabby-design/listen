@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('overlayApi', {
   onStartRecording: (callback) => {
-    ipcRenderer.on('start-recording', () => callback());
+    ipcRenderer.on('start-recording', (_event, data) => callback(data));
   },
   onStopRecording: (callback) => {
     ipcRenderer.on('stop-recording', () => callback());
@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('overlayApi', {
   },
   sendAudio: (arrayBuffer, mimeType, wavBuffer, durationMs, rms) => {
     ipcRenderer.send('audio-captured', { buffer: arrayBuffer, mimeType, wavBuffer, durationMs, rms });
+  },
+  sendWavBuffer: (wavBuffer) => {
+    ipcRenderer.send('wav-buffer-ready', { wavBuffer });
   },
   sendCancel: () => {
     ipcRenderer.send('recording-cancelled');

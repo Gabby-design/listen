@@ -20,6 +20,10 @@ let currentState = 'idle'; // 'listening' | 'processing' | 'error' | 'done'
 let time = 0;
 let voiceEnergy = 0; // 0 to 1 smooth
 let animFrameId = null;
+let recordingVoiceFrames = 0;
+let recordingVoiceSum = 0;
+let recordingMaxVoiceEnergy = 0;
+let isCurrentSessionOffline = false;
 
 // Audio capture
 let mediaStream = null;
@@ -91,6 +95,9 @@ function render() {
     const avg = sum / dataArray.length;
     const target = Math.min(1.0, (avg / 128));
     voiceEnergy += (target - voiceEnergy) * 0.25; // Smooth interpolation
+    recordingVoiceFrames++;
+    recordingVoiceSum += target;
+    if (target > recordingMaxVoiceEnergy) recordingMaxVoiceEnergy = target;
   } else {
     voiceEnergy *= 0.9;
   }
@@ -250,10 +257,14 @@ function setState(state) {
 let recordingStartTime = 0;
 
 // Audio Recording Pipeline
-async function startRecording() {
+async function startRecording(isOffline = false) {
   try {
     recordedChunks = [];
     recordingStartTime = Date.now();
+    recordingVoiceFrames = 0;
+    recordingVoiceSum = 0;
+    recordingMaxVoiceEnergy = 0;
+    isCurrentSessionOffline = !!isOffline;
     playAudioChime('start');
     setState('listening');
 
@@ -347,35 +358,41 @@ function encodeWav(samples, sampleRate = 16000) {
         if (window.overlayApi && window.overlayApi.sendCancel) window.overlayApi.sendCancel();
         return;
       }
-      const recordedBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-      const arrayBuffer = await recordedBlob.arrayBuffer();
-      let wavBuffer = null;
-      let rms = 0;
-      try {
-        if (audioContext) {
-          const decoded = await audioContext.decodeAudioData(arrayBuffer.slice(0));
-          const channelData = decoded.getChannelData(0);
-          let sumSquares = 0;
-          for (let i = 0; i < channelData.length; i++) {
-            sumSquares += channelData[i] * channelData[i];
-          }
-          rms = Math.sqrt(sumSquares / channelData.length);
-          const resampled = resampleTo16kHz(decoded);
-          wavBuffer = encodeWav(resampled, 16000);
-        }
-      } catch (e) {
-        console.warn('WAV/RMS calculation skipped:', e);
-      }
 
-      if (rms > 0 && rms < 0.0025) {
-        console.log(`[Overlay]: Audio energy (${rms.toFixed(5)}) below vocal threshold, cancelling.`);
+      const avgEnergy = recordingVoiceFrames > 0 ? (recordingVoiceSum / recordingVoiceFrames) : 0;
+      const estimatedRms = Math.max(avgEnergy * 0.05, recordingMaxVoiceEnergy * 0.02);
+
+      if (recordingMaxVoiceEnergy < 0.04 && durationMs > 800) {
+        console.log(`[Overlay]: Audio energy (${recordingMaxVoiceEnergy.toFixed(4)}) below vocal threshold, cancelling.`);
         if (window.overlayApi && window.overlayApi.sendCancel) {
           window.overlayApi.sendCancel();
           return;
         }
       }
 
-      if (window.overlayApi) window.overlayApi.sendAudio(arrayBuffer, recordedBlob.type, wavBuffer, durationMs, rms);
+      const recordedBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      const arrayBuffer = await recordedBlob.arrayBuffer();
+
+      // 1. Immediately send audio to main process (instant zero-delay dispatch)
+      if (window.overlayApi) {
+        window.overlayApi.sendAudio(arrayBuffer, recordedBlob.type, null, durationMs, estimatedRms);
+      }
+
+      // 2. Transcode WAV asynchronously in background for offline speech fallback
+      if (audioContext) {
+        setTimeout(async () => {
+          try {
+            const decoded = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+            const resampled = resampleTo16kHz(decoded);
+            const wavBuffer = encodeWav(resampled, 16000);
+            if (window.overlayApi && window.overlayApi.sendWavBuffer) {
+              window.overlayApi.sendWavBuffer(wavBuffer);
+            }
+          } catch (e) {
+            console.warn('Background WAV calculation skipped:', e);
+          }
+        }, 0);
+      }
     };
 
     mediaRecorder.onerror = (e) => {
@@ -402,8 +419,8 @@ function stopRecording() {
 
 // IPC Event Listeners from Main Process
 if (window.overlayApi) {
-  window.overlayApi.onStartRecording(() => {
-    startRecording();
+  window.overlayApi.onStartRecording((data) => {
+    startRecording(data && data.isOffline);
   });
 
   window.overlayApi.onStopRecording(() => {

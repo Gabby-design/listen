@@ -21,7 +21,7 @@ function getWindowsVbsScript(method = 'default') {
   const vbsPath = path.join(tempDir, `listen_paste_${method}.vbs`);
   const vbsContent = [
     'Set WshShell = CreateObject("WScript.Shell")',
-    'WScript.Sleep 20',
+    'WScript.Sleep 10',
     `WshShell.SendKeys "${sendKeysSequence}"`
   ].join('\r\n');
 

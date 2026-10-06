@@ -6,7 +6,7 @@
 
 - Owner: **Master** (address as Master across all sessions)
 
-Desktop voice dictation application built with Electron for Windows and macOS. Version 0.0.6. Features silent in-app auto-updating via `electron-updater` from GitHub Releases (`Gabby-design/listen`), fully offline speech recognition via the native Windows Speech Platform (`offlinetranscriber.exe`), targeted title-aware background media pausing via Windows System Media Transport Controls (`audiocontrol.exe`), accidental tap and silence filtering, faithful transcription of humming and singing, in-app "How It Works" guide, vibrant Sunset Orange & Purple theme, cloud Whisper fallback, and simulated paste injection with zero clipboard residue.
+Desktop voice dictation application built with Electron for Windows and macOS. Version 0.0.7. Features silent in-app auto-updating via `electron-updater` from GitHub Releases (`Gabby-design/listen`), instant sub-second paste injection with real-time audio energy tracking and redundant LLM generation bypass on long speech, fully offline speech recognition via the native Windows Speech Platform (`offlinetranscriber.exe`), targeted title-aware background media pausing via Windows System Media Transport Controls (`audiocontrol.exe`), accidental tap and silence filtering, faithful transcription of humming and singing, in-app "How It Works" guide, vibrant Sunset Orange & Purple theme, cloud Whisper fallback, and simulated paste injection with zero clipboard residue.
 
 ## Fixed Decisions
 
