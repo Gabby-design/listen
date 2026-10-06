@@ -98,11 +98,11 @@ function render() {
   const speed = currentState === 'processing' ? 0.08 : 0.035;
   time += speed;
 
-  // Determine theme colors based on state
-  let primaryGlow = 'rgba(56, 189, 248, 0.9)';   // Electric cyan/blue
-  let secondaryGlow = 'rgba(96, 165, 250, 0.7)'; // Neon sky blue
-  let coreGlow = 'rgba(14, 165, 233, 0.25)';
-  let shadowCol = '#38bdf8';
+  // Determine theme colors based on state: Sunset Orange & Purple
+  let primaryGlow = 'rgba(249, 115, 22, 0.95)';   // Sunset Orange
+  let secondaryGlow = 'rgba(168, 85, 247, 0.8)';  // Neon Violet / Purple
+  let coreGlow = 'rgba(234, 88, 12, 0.25)';
+  let shadowCol = '#f97316';
   let shadowBlurVal = 14 + voiceEnergy * 12;
 
   if (currentState === 'error') {
@@ -160,10 +160,10 @@ function render() {
       drawContour(points, primaryGlow, 2.2, shadowCol, shadowBlurVal);
     } else if (l === 1) {
       // Secondary glowing fluid fold
-      drawContour(points, secondaryGlow, 1.8, shadowCol, shadowBlurVal * 0.7);
+      drawContour(points, secondaryGlow, 1.8, '#a855f7', shadowBlurVal * 0.7);
     } else {
       // Inner fluid tendrils
-      drawContour(points, 'rgba(129, 140, 248, 0.45)', 1.2, shadowCol, 6);
+      drawContour(points, 'rgba(192, 132, 252, 0.45)', 1.2, '#c084fc', 6);
     }
   }
 
@@ -247,10 +247,13 @@ function setState(state) {
   }
 }
 
+let recordingStartTime = 0;
+
 // Audio Recording Pipeline
 async function startRecording() {
   try {
     recordedChunks = [];
+    recordingStartTime = Date.now();
     playAudioChime('start');
     setState('listening');
 
@@ -331,23 +334,48 @@ function encodeWav(samples, sampleRate = 16000) {
 }
 
     mediaRecorder.onstop = async () => {
+      const durationMs = Date.now() - recordingStartTime;
+      if (durationMs < 400) {
+        console.log(`[Overlay]: Tap duration too short (${durationMs}ms), treating as accidental press.`);
+        if (window.overlayApi && window.overlayApi.sendCancel) {
+          window.overlayApi.sendCancel();
+        }
+        return;
+      }
+
       if (recordedChunks.length === 0) {
-        if (window.overlayApi) window.overlayApi.sendError('No audio recorded');
+        if (window.overlayApi && window.overlayApi.sendCancel) window.overlayApi.sendCancel();
         return;
       }
       const recordedBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
       const arrayBuffer = await recordedBlob.arrayBuffer();
       let wavBuffer = null;
+      let rms = 0;
       try {
         if (audioContext) {
           const decoded = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+          const channelData = decoded.getChannelData(0);
+          let sumSquares = 0;
+          for (let i = 0; i < channelData.length; i++) {
+            sumSquares += channelData[i] * channelData[i];
+          }
+          rms = Math.sqrt(sumSquares / channelData.length);
           const resampled = resampleTo16kHz(decoded);
           wavBuffer = encodeWav(resampled, 16000);
         }
       } catch (e) {
-        console.warn('WAV encoding skipped:', e);
+        console.warn('WAV/RMS calculation skipped:', e);
       }
-      if (window.overlayApi) window.overlayApi.sendAudio(arrayBuffer, recordedBlob.type, wavBuffer);
+
+      if (rms > 0 && rms < 0.0025) {
+        console.log(`[Overlay]: Audio energy (${rms.toFixed(5)}) below vocal threshold, cancelling.`);
+        if (window.overlayApi && window.overlayApi.sendCancel) {
+          window.overlayApi.sendCancel();
+          return;
+        }
+      }
+
+      if (window.overlayApi) window.overlayApi.sendAudio(arrayBuffer, recordedBlob.type, wavBuffer, durationMs, rms);
     };
 
     mediaRecorder.onerror = (e) => {

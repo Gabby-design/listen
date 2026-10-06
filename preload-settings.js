@@ -12,6 +12,12 @@ contextBridge.exposeInMainWorld('settingsApi', {
   completeFirstLaunch: (customShortcut) => ipcRenderer.invoke('complete-first-launch', customShortcut),
   getHistory: () => ipcRenderer.invoke('get-history'),
   clearHistory: () => ipcRenderer.invoke('clear-history'),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  restartAndInstallUpdate: () => ipcRenderer.send('restart-and-install-update'),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+  onUpdateStatus: (callback) => {
+    ipcRenderer.on('update-status', (_event, data) => callback(data));
+  },
   onActivateShortcutRecorder: (callback) => {
     ipcRenderer.on('activate-shortcut-recorder', () => callback());
   },

@@ -1,4 +1,4 @@
-// Listen v0.0.03 Settings Controller
+// Listen v0.0.4 Settings Controller
 // Elements
 const tabButtons = document.querySelectorAll('.tab-btn');
 const tabPanels = document.querySelectorAll('.tab-panel');
@@ -52,6 +52,14 @@ const btnSave = document.getElementById('btn-save');
 const btnCancel = document.getElementById('btn-cancel');
 const btnQuitApp = document.getElementById('btn-quit-app');
 const saveStatus = document.getElementById('save-status');
+
+// Updates
+const updateBadgeContainer = document.getElementById('update-badge-container');
+const btnRestartUpdate = document.getElementById('btn-restart-update');
+const btnRestartUpdateText = document.getElementById('btn-restart-update-text');
+const btnCheckUpdates = document.getElementById('btn-check-updates');
+const updateStatusMsg = document.getElementById('update-status-msg');
+const appVersionSubtitle = document.getElementById('app-version-subtitle');
 
 // State
 let currentConfig = {};
@@ -563,6 +571,102 @@ function setupSaveAndActions() {
       activateTab('tab-shortcuts');
       primaryShortcutBox.scrollIntoView({ behavior: 'smooth' });
       primaryShortcutBox.click();
+    });
+  }
+
+  // Setup auto-update listeners & controls
+  setupAutoUpdateUI();
+}
+
+function setupAutoUpdateUI() {
+  if (!window.settingsApi) return;
+
+  // Retrieve current application version
+  if (window.settingsApi.getAppVersion) {
+    window.settingsApi.getAppVersion().then(ver => {
+      if (ver) {
+        if (appVersionSubtitle) {
+          appVersionSubtitle.textContent = `v${ver} • AI Voice-to-Text & Offline Dictation`;
+        }
+        if (updateStatusMsg && updateStatusMsg.textContent.includes('v0.0.5')) {
+          updateStatusMsg.textContent = `Current version: v${ver} • Up to date`;
+        }
+      }
+    }).catch(() => {});
+  }
+
+  // Listen for auto-updater events
+  if (window.settingsApi.onUpdateStatus) {
+    window.settingsApi.onUpdateStatus((data) => {
+      if (!data) return;
+      if (data.status === 'checking') {
+        if (updateStatusMsg) updateStatusMsg.textContent = 'Checking for updates on GitHub...';
+      } else if (data.status === 'available') {
+        if (updateStatusMsg) updateStatusMsg.textContent = `Update v${data.version} available. Downloading in background...`;
+      } else if (data.status === 'downloading') {
+        if (updateStatusMsg) updateStatusMsg.textContent = `Downloading update: ${data.percent}%`;
+      } else if (data.status === 'ready') {
+        if (updateStatusMsg) {
+          updateStatusMsg.textContent = `Version ${data.version} downloaded and ready. Click restart to update.`;
+          updateStatusMsg.style.color = '#34d399';
+        }
+        if (updateBadgeContainer) {
+          updateBadgeContainer.style.display = 'flex';
+        }
+        if (btnRestartUpdateText) {
+          btnRestartUpdateText.textContent = `Restart to Update (v${data.version})`;
+        }
+      } else if (data.status === 'up-to-date') {
+        if (updateStatusMsg) {
+          updateStatusMsg.textContent = 'Current version is up to date.';
+          updateStatusMsg.style.color = 'var(--text-muted)';
+        }
+      } else if (data.status === 'error') {
+        if (updateStatusMsg) {
+          updateStatusMsg.textContent = `Update check: ${data.error || 'No updates available'}`;
+        }
+      }
+    });
+  }
+
+  // Restart to update button
+  if (btnRestartUpdate) {
+    btnRestartUpdate.addEventListener('click', () => {
+      if (window.settingsApi.restartAndInstallUpdate) {
+        btnRestartUpdate.disabled = true;
+        if (btnRestartUpdateText) btnRestartUpdateText.textContent = 'Restarting...';
+        window.settingsApi.restartAndInstallUpdate();
+      }
+    });
+  }
+
+  // Manual check button
+  if (btnCheckUpdates) {
+    btnCheckUpdates.addEventListener('click', async () => {
+      btnCheckUpdates.disabled = true;
+      btnCheckUpdates.textContent = 'Checking...';
+      if (updateStatusMsg) updateStatusMsg.textContent = 'Checking GitHub Releases for updates...';
+      try {
+        const res = await window.settingsApi.checkForUpdates();
+        if (res && res.success) {
+          if (res.updateInfo) {
+            if (updateStatusMsg) updateStatusMsg.textContent = `Found v${res.updateInfo.version}. Downloading in background...`;
+          } else {
+            if (updateStatusMsg) updateStatusMsg.textContent = 'You are on the latest version.';
+          }
+        } else {
+          if (updateStatusMsg) updateStatusMsg.textContent = res ? (res.message || res.error || 'Up to date') : 'Up to date';
+        }
+      } catch (e) {
+        if (updateStatusMsg) updateStatusMsg.textContent = 'Check failed: ' + e.message;
+      } finally {
+        setTimeout(() => {
+          if (btnCheckUpdates) {
+            btnCheckUpdates.disabled = false;
+            btnCheckUpdates.textContent = 'Check for Updates';
+          }
+        }, 2000);
+      }
     });
   }
 }

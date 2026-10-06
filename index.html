@@ -13,11 +13,12 @@
   <style>
     :root {
       --bg-dark: #090a10;
-      --bg-card: #121524;
-      --bg-card-hover: #181c32;
-      --accent: #6366f1;
-      --accent-glow: rgba(99, 102, 241, 0.35);
-      --accent-cyan: #38bdf8;
+      --bg-card: #13151f;
+      --bg-card-hover: #1a1d2b;
+      --accent: #ea580c;
+      --accent-orange: #f97316;
+      --accent-glow: rgba(249, 115, 22, 0.35);
+      --accent-purple: #a855f7;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --border: rgba(255, 255, 255, 0.1);
@@ -43,7 +44,7 @@
       align-items: center;
       padding: 24px 20px 80px;
       overflow-x: hidden;
-      background-image: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.18) 0%, rgba(9, 10, 16, 0) 70%);
+      background-image: radial-gradient(circle at 50% 0%, rgba(234, 88, 12, 0.16) 0%, rgba(9, 10, 16, 0) 70%);
       line-height: 1.6;
     }
 
@@ -69,13 +70,13 @@
     .brand-icon {
       width: 38px;
       height: 38px;
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      background: linear-gradient(135deg, #ea580c 0%, #a855f7 100%);
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);
     }
 
     .brand-icon svg {
@@ -91,9 +92,9 @@
 
     .brand-version {
       font-size: 11px;
-      background: rgba(99, 102, 241, 0.2);
-      border: 1px solid rgba(99, 102, 241, 0.4);
-      color: #a5b4fc;
+      background: rgba(234, 88, 12, 0.18);
+      border: 1px solid rgba(234, 88, 12, 0.4);
+      color: #fed7aa;
       padding: 2px 8px;
       border-radius: 999px;
       font-weight: 600;
@@ -139,9 +140,9 @@
     }
 
     .hero-badge {
-      background: rgba(99, 102, 241, 0.15);
-      border: 1px solid rgba(99, 102, 241, 0.4);
-      color: #a5b4fc;
+      background: rgba(234, 88, 12, 0.15);
+      border: 1px solid rgba(234, 88, 12, 0.4);
+      color: #fdba74;
       font-size: 12.5px;
       font-weight: 600;
       padding: 6px 16px;
@@ -157,7 +158,7 @@
       font-size: 48px;
       font-weight: 800;
       letter-spacing: -0.035em;
-      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #818cf8 100%);
+      background: linear-gradient(135deg, #ffffff 0%, #fed7aa 50%, #c084fc 100%);
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -194,14 +195,14 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      background: linear-gradient(135deg, #ea580c 0%, #a855f7 100%);
       color: white;
-      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.4);
+      box-shadow: 0 4px 16px rgba(234, 88, 12, 0.4);
     }
 
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 22px rgba(2, 132, 199, 0.55);
+      box-shadow: 0 6px 22px rgba(234, 88, 12, 0.55);
     }
 
     .btn-secondary {
@@ -229,7 +230,7 @@
     }
 
     .section-tag {
-      color: #818cf8;
+      color: #fb923c;
       font-size: 12.5px;
       font-weight: 700;
       text-transform: uppercase;
@@ -291,7 +292,7 @@
       left: 0;
       width: 100%;
       height: 3px;
-      background: linear-gradient(90deg, #6366f1 0%, #38bdf8 100%);
+      background: linear-gradient(90deg, #ea580c 0%, #a855f7 100%);
     }
 
     .card-icon {
@@ -367,8 +368,8 @@
 
     /* Quote / Philosophy Box */
     .manifesto-box {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%);
-      border: 1px solid rgba(99, 102, 241, 0.3);
+      background: linear-gradient(135deg, rgba(234, 88, 12, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%);
+      border: 1px solid rgba(234, 88, 12, 0.3);
       border-radius: var(--radius);
       padding: 36px 28px;
       text-align: center;
@@ -390,7 +391,7 @@
 
     .manifesto-author {
       font-size: 13px;
-      color: #818cf8;
+      color: #fb923c;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -398,14 +399,14 @@
 
     /* Action on PC Notice */
     .pc-action-banner {
-      background: rgba(14, 165, 233, 0.08);
-      border: 1px solid rgba(14, 165, 233, 0.3);
+      background: rgba(234, 88, 12, 0.08);
+      border: 1px solid rgba(234, 88, 12, 0.3);
       border-radius: 10px;
       padding: 16px 20px;
       display: flex;
       align-items: center;
       gap: 14px;
-      color: #bae6fd;
+      color: #fed7aa;
       font-size: 14px;
       line-height: 1.5;
     }
@@ -450,13 +451,13 @@
       </div>
       <div>
         <span class="brand-name">Listen</span>
-        <span class="brand-version">v0.0.03</span>
+        <span class="brand-version">v0.0.4</span>
       </div>
     </a>
     <div class="nav-links">
       <a href="#who-built-it" class="nav-link">Creator</a>
+      <a href="#what-its-for" class="nav-link">What It's For</a>
       <a href="#why-built" class="nav-link">Why Listen</a>
-      <a href="#how-it-works" class="nav-link">Architecture</a>
       <a href="https://github.com/Gabby-design/listen" target="_blank" class="nav-link">GitHub</a>
     </div>
   </header>
@@ -464,7 +465,7 @@
   <main class="container">
     <!-- Hero -->
     <section class="hero">
-      <div class="hero-badge">⚡ The Thought-Speed Voice Engine</div>
+      <div class="hero-badge">The Thought-Speed Voice Engine</div>
       <h1>Speak at the Speed of Thought.<br>Intelligent Dictation for Every App.</h1>
       <p>
         The human mind thinks at 150 words per minute. Physical keyboards bottleneck you to 40 WPM. Listen is an invisible, context-aware desktop companion that translates your spoken voice into polished, perfectly punctuated text wherever your cursor rests.
@@ -472,7 +473,7 @@
       
       <div class="cta-group">
         <a href="https://github.com/Gabby-design/listen/releases" target="_blank" class="btn btn-primary">
-          <span>⬇️ Download Windows Setup (v0.0.03)</span>
+          <span>Download Windows Setup (.exe)</span>
         </a>
         <button id="btn-install-pwa" class="btn btn-secondary">
           <span>📲 Install Mobile App (PWA)</span>
@@ -606,75 +607,9 @@
         </blockquote>
         <span class="manifesto-author">Listen Product Manifesto</span>
       </div>
-    </section>
-
-    <!-- Section 4: How It Works (Explained in Writing) -->
-    <section class="content-section" id="how-it-works">
-      <div class="section-header">
-        <span class="section-tag">Technical Architecture</span>
-        <h2 class="section-title">How the Technology Works</h2>
-        <p class="section-lead">
-          A detailed architectural breakdown of the dual-intelligence pipeline and native OS integration.
-        </p>
-      </div>
-
-      <div class="tech-breakdown">
-        <div class="tech-steps">
-          <div class="tech-step-item">
-            <div class="tech-step-number">1</div>
-            <h4>Stage 1: Acoustic Whisper Capture</h4>
-            <p>
-              When you press your global shortcut, Listen activates high-clarity 16kHz mono audio recording using lightweight Opus compression. The stream is sent to Groq's LPUs running Whisper Large-v3-Turbo, capturing every syllable and word with acoustic precision in ~300ms.
-            </p>
-          </div>
-
-          <div class="tech-step-item">
-            <div class="tech-step-number">2</div>
-            <h4>Stage 2: Contextual LLM Reasoning</h4>
-            <p>
-              Raw speech is immediately piped to an ultra-fast LLM context model. The model analyzes grammatical structure, formats lists (e.g. converting <em>"number one"</em> into <code>1.</code>), inserts commas and question marks, capitalizes names, and formats brackets in ~150ms.
-            </p>
-          </div>
-
-          <div class="tech-step-item">
-            <div class="tech-step-number">3</div>
-            <h4>Stage 3: Zero-Focus Fluid Orb</h4>
-            <p>
-              During speech, a borderless, transparent floating orb animates fluidly above your Windows taskbar. Engineered with non-focusable OS flags, it stays on top visually without ever stealing cursor focus away from your active software.
-            </p>
-          </div>
-
-          <div class="tech-step-item">
-            <div class="tech-step-number">4</div>
-            <h4>Stage 4: Native Keystroke Injection</h4>
-            <p>
-              Once formatted, Listen writes the polished transcription to the system clipboard and immediately executes native OS keystroke simulation to paste the text directly into the exact coordinates of your blinking cursor.
-            </p>
-          </div>
-        </div>
-
-        <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 10px;">
-          <h4 style="color: #38bdf8; font-size: 15px;">Extended 1-Hour Continuous Dictation</h4>
-          <p style="font-size: 13.5px; color: #94a3b8;">
-            By streaming 32kbps mono Opus audio with 1-second chunks, an entire 60-minute dictation session consumes only ~14.4 MB of bandwidth—comfortably below the 25 MB payload ceiling. You can talk for an hour without losing a single thought.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Download Section -->
-    <section class="content-section" style="text-align: center; align-items: center;">
-      <div class="section-header" style="align-items: center;">
-        <span class="section-tag">Get Started</span>
-        <h2 class="section-title">Experience Listen on Your Machine</h2>
-        <p class="section-lead">
-          Download the official Windows installer or install the Progressive Web App on mobile.
-        </p>
-      </div>
-
       <div class="cta-group" style="margin-top: 12px;">
         <a href="https://github.com/Gabby-design/listen/releases" target="_blank" class="btn btn-primary" style="padding: 14px 28px; font-size: 15.5px;">
-          <span>⬇️ Download Listen Setup v0.0.03 (.exe)</span>
+          <span>Download Listen Windows Setup (.exe)</span>
         </a>
         <button id="btn-install-pwa-bottom" class="btn btn-secondary" style="padding: 14px 24px; font-size: 15px;">
           <span>📲 Install Mobile App</span>

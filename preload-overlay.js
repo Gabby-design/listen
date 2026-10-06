@@ -16,8 +16,11 @@ contextBridge.exposeInMainWorld('overlayApi', {
   onSetSoundFeedback: (callback) => {
     ipcRenderer.on('set-sound-feedback', (_event, enabled) => callback(enabled));
   },
-  sendAudio: (arrayBuffer, mimeType, wavBuffer) => {
-    ipcRenderer.send('audio-captured', { buffer: arrayBuffer, mimeType, wavBuffer });
+  sendAudio: (arrayBuffer, mimeType, wavBuffer, durationMs, rms) => {
+    ipcRenderer.send('audio-captured', { buffer: arrayBuffer, mimeType, wavBuffer, durationMs, rms });
+  },
+  sendCancel: () => {
+    ipcRenderer.send('recording-cancelled');
   },
   sendError: (errorMessage) => {
     ipcRenderer.send('recording-error', errorMessage);

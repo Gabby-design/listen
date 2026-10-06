@@ -23,7 +23,15 @@
             <h1>Listen Dictation</h1>
             <span class="status-pill-ready"><span class="status-pill-dot"></span> Ready</span>
           </div>
-          <p class="subtitle">v0.0.4 • AI Voice-to-Text & Offline Dictation</p>
+          <p class="subtitle" id="app-version-subtitle">v0.0.5 • AI Voice-to-Text & Offline Dictation</p>
+        </div>
+        <div id="update-badge-container" style="display: none; margin-left: auto;">
+          <button type="button" id="btn-restart-update" class="btn btn-sm" style="background: linear-gradient(135deg, #f97316, #a855f7); color: #fff; font-weight: 700; border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            <span id="btn-restart-update-text">Restart to Update</span>
+          </button>
         </div>
       </div>
 
@@ -40,6 +48,9 @@
         </button>
         <button type="button" class="tab-btn" data-tab="tab-history" id="tab-btn-history" role="tab" aria-selected="false">
           <span class="tab-icon">📋</span> History
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-how-it-works" role="tab" aria-selected="false">
+          <span class="tab-icon">💡</span> How It Works
         </button>
       </nav>
     </header>
@@ -276,6 +287,16 @@
               <span class="unit-text">ms</span>
             </div>
           </div>
+        <!-- App Updates Section -->
+        <div class="form-section">
+          <div class="section-row-toggle">
+            <div>
+              <label class="section-title">Automatic Updates</label>
+              <p class="section-desc">Listen checks GitHub Releases for new updates in the background. When ready, click restart to apply immediately.</p>
+            </div>
+            <button type="button" id="btn-check-updates" class="btn btn-secondary btn-sm">Check for Updates</button>
+          </div>
+          <div id="update-status-msg" style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">Current version: v0.0.5 • Up to date</div>
         </div>
       </div>
 
@@ -300,6 +321,58 @@
           <div class="empty-icon">📝</div>
           <div class="empty-title">No transcriptions yet</div>
           <div class="empty-desc">Your recorded dictations and polished transcriptions will automatically appear here with 1-click re-copying.</div>
+        </div>
+      </div>
+
+      <!-- TAB 5: How It Works Guide -->
+      <div class="tab-panel" id="tab-how-it-works" role="tabpanel">
+        <div class="form-section">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <label class="section-title" style="color: var(--accent);">How Listen Operates</label>
+            <p class="section-desc">An invisible, high-velocity voice layer that types directly into your active cursor without stealing window focus.</p>
+          </div>
+
+          <div class="guide-grid">
+            <div class="guide-item">
+              <div class="guide-step-num">1</div>
+              <div>
+                <h4 class="guide-item-title">Place Your Cursor Anywhere</h4>
+                <p class="guide-item-desc">Click your cursor into any app—VS Code, Microsoft Word, Chrome, Slack, Notion, Windows Terminal, or Discord.</p>
+              </div>
+            </div>
+
+            <div class="guide-item">
+              <div class="guide-step-num">2</div>
+              <div>
+                <h4 class="guide-item-title">Press Shortcut (Tap or Hold)</h4>
+                <p class="guide-item-desc">Press <strong>Ctrl+Shift+Space</strong> (or your custom shortcut). In Push-to-Talk mode, simply hold the keys while speaking.</p>
+              </div>
+            </div>
+
+            <div class="guide-item">
+              <div class="guide-step-num">3</div>
+              <div>
+                <h4 class="guide-item-title">Speak, Sing, or Hum</h4>
+                <p class="guide-item-desc">Talk continuously at thought speed. Speak punctuation, humming ("hmmm"), sung lyrics, numbers ("number one in figures"), or math symbols. Background music pauses automatically if playing.</p>
+              </div>
+            </div>
+
+            <div class="guide-item">
+              <div class="guide-step-num">4</div>
+              <div>
+                <h4 class="guide-item-title">Watch the Fluid Neon Orb</h4>
+                <p class="guide-item-desc">The floating Sunset orb animates smoothly above your taskbar, reacting to your speech volume without ever stealing OS window focus.</p>
+              </div>
+            </div>
+
+            <div class="guide-item">
+              <div class="guide-step-num">5</div>
+              <div>
+                <h4 class="guide-item-title">Instant Keystroke Paste</h4>
+                <p class="guide-item-desc">Release or tap your shortcut again. Listen instantly pastes the formatted transcription into your cursor, resumes any paused music, and preserves your previous clipboard.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>

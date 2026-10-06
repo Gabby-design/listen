@@ -20,3 +20,4 @@ Plans say *what, in what order, and what "done" means*. Mark a task complete onl
 
 | Plan | What it delivered |
 | --- | --- |
+| [`plan-audio-speech-theme-installer.md`](./active/plan-audio-speech-theme-installer.md) | WinRT GSMTC targeted media pause/resume, silent auto-updater with desktop notifications and in-app restart button, accidental tap filter, vocal humming/singing transcription, web/in-app separation, Sunset Orange/Purple theme, and NSIS installer setup |

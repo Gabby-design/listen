@@ -146,4 +146,14 @@ const test4 = formatTranscription('user dash friendly and twenty percent sign');
 console.log('Test 4:', test4);
 assert.strictEqual(test4, 'User-friendly and twenty%');
 
+// Test 5: Humming preservation ("hmmm", "mmm", "hmm-mm")
+const test5 = formatTranscription('hmmm let me think about this period');
+console.log('Test 5:', test5);
+assert.strictEqual(test5, 'Hmmm let me think about this.');
+
+// Test 6: Singing and musical cadence preservation
+const test6 = formatTranscription('la la la singing in the rain comma exactly like that');
+console.log('Test 6:', test6);
+assert.strictEqual(test6, 'La la la singing in the rain, exactly like that');
+
 console.log('All local tests passed successfully.');

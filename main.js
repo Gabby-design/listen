@@ -8,10 +8,12 @@ const {
   clipboard,
   screen,
   session,
-  nativeImage
+  nativeImage,
+  Notification
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { autoUpdater } = require('electron-updater');
 
 const { loadConfig, saveConfig, getShortcutDisplay } = require('./config');
 const { simulatePaste } = require('./paste');
@@ -67,46 +69,75 @@ function getOfflineTranscriberPath() {
   return null;
 }
 
-let isAudioMutedByListen = false;
+let didPauseMediaByListen = false;
 
-function pauseAndMuteAudio() {
-  if (config.muteAudioOnRecord === false) return;
+function pauseMediaIfPlaying() {
+  if (config.pauseMediaOnRecord === false && config.muteAudioOnRecord === false) return;
   if (process.platform !== 'win32') return;
   const exePath = getAudioControlPath();
   if (!exePath || !fs.existsSync(exePath)) return;
 
   try {
-    execFile(exePath, ['start-listening'], (err, stdout) => {
+    execFile(exePath, ['pause-if-playing'], (err, stdout) => {
       if (err) {
-        console.warn('Audio muting failed:', err.message);
+        console.warn('Audio control error:', err.message);
       } else {
-        isAudioMutedByListen = true;
-        console.log('[AudioControl]: Background audio muted & media paused while listening.');
+        const out = stdout ? stdout.trim() : '';
+        if (out.includes('PAUSED')) {
+          if (appState !== 'recording') {
+            // Recording already finished or was cancelled before pause completed; restore immediately
+            console.log('[AudioControl]: Recording stopped before pause completed; restoring immediately.');
+            execFile(exePath, ['resume-media'], () => {});
+            didPauseMediaByListen = false;
+          } else {
+            didPauseMediaByListen = true;
+            console.log('[AudioControl]: Background music/audio paused while listening.');
+          }
+        } else {
+          didPauseMediaByListen = false;
+          console.log('[AudioControl]: No active audio playing. Background media left untouched.');
+        }
       }
     });
   } catch (e) {
-    console.warn('Audio muting exception:', e);
+    console.warn('Audio pause exception:', e);
   }
 }
 
-function restoreAudio() {
+function restoreMediaIfPaused() {
   if (process.platform !== 'win32') return;
-  if (!isAudioMutedByListen && config.muteAudioOnRecord === false) return;
+  if (!didPauseMediaByListen) {
+    // Sound was not playing or was already paused before dictation started; leave it untouched
+    return;
+  }
+  // Clear immediately to prevent multiple duplicate calls from dispatching parallel resumes
+  didPauseMediaByListen = false;
+
   const exePath = getAudioControlPath();
   if (!exePath || !fs.existsSync(exePath)) return;
 
   try {
-    execFile(exePath, ['stop-listening'], (err) => {
-      isAudioMutedByListen = false;
+    execFile(exePath, ['resume-media'], (err, stdout) => {
       if (err) {
-        console.warn('Audio restore failed:', err.message);
+        console.warn('Audio resume error:', err.message);
       } else {
-        console.log('[AudioControl]: System audio output restored.');
+        const out = stdout ? stdout.trim() : '';
+        if (out.includes('RESUMED')) {
+          console.log('[AudioControl]: Background music/audio resumed.');
+        }
       }
     });
   } catch (e) {
     console.warn('Audio restore exception:', e);
   }
+}
+
+function pauseAndMuteAudio() {
+  pauseMediaIfPlaying();
+}
+
+function restoreAudio() {
+  restoreMediaIfPaused();
 }
 
 function transcribeAudioOffline(audioBuffer) {
@@ -682,11 +713,12 @@ async function enhanceTranscriptionWithAI(rawText, mode = 'verbatim') {
 Your job is to listen to the speaker, understand the sentence they are putting together, fix phonetic or grammatical slips, and format clean, beautiful written text.
 
 CORE INSTRUCTIONS:
-1. UNDERSTAND SENTENCES & MEANING:
+1. UNDERSTAND SENTENCES, WORDS & VOCAL SOUNDS:
    - Truly understand the meaning and context of the words coming out of the speaker's mouth.
    - Assemble complete, coherent sentences with correct word placement, vocabulary, and spelling.
-   - Clean up vocal hesitations and filler words ("um", "uh", "you know", "like" when used as filler).
-   - Fix obvious grammatical or phonetic slips (such as clearly distinguishing "go" and "thank you") while faithfully preserving the speaker's true intent and voice.
+   - Clean up verbal stutters and filler words ("you know", "like" when used purely as vocal hesitation).
+   - PRESERVE HUMMING & SINGING: If the speaker is humming (e.g., "hmmm", "hmm", "mmm", "hmm-mm") or singing lyrics, preserve every word and humming sound verbatim. Do NOT delete humming sounds or sung lyrics.
+   - If no words or vocal sounds were spoken, output an empty string. Never hallucinate or invent words.
 2. INTELLIGENT NUMBERS & FIGURES:
    - When the speaker refers to figures, mathematical numbers, measurements, dates, times, currency, or explicit numbers ("number 1", "5 dollars", "3 o'clock"), write them in figures (e.g., 1, 5, 3:00).
    - If the speaker says "in figures" or "in words", follow that directive explicitly (e.g. "number one in figures" -> "1", "number one in words" -> "one").
@@ -706,11 +738,12 @@ CORE INSTRUCTIONS:
 Your job is to listen to the speaker's words, understand their sentences, fix any phonetic speech misrecognitions or spelling errors, and format the output accurately and naturally.
 
 CORE INTELLIGENCE RULES:
-1. UNDERSTAND SENTENCES & WORDS:
+1. UNDERSTAND SENTENCES, WORDS & VOCAL EXPRESSIONS:
    - Truly understand the meaning and context of the words coming out of the speaker's mouth.
-   - If a word was misheard or phonetically garbled by speech-to-text (e.g. accented speech, subtle pronunciations like distinguishing "go" and "thank you"), correct it based on sentence context so the sentence makes complete, coherent sense.
+   - If a word was misheard or phonetically garbled by speech-to-text, correct it based on sentence context so the sentence makes complete, coherent sense.
    - Ensure all words are spelled correctly and placed where they logically belong in the sentence.
-   - Faithfully capture every sentence and thought without hallucination or unrelated vocabulary.
+   - PRESERVE HUMMING & SINGING: If the speaker is humming (e.g., "hmmm", "hmm", "mmm", "hmm-mm") or singing, faithfully preserve the humming and lyrics verbatim.
+   - If no words were spoken, output an empty string. Never hallucinate words.
 2. INTELLIGENT NUMBER & FIGURE FORMATTING:
    - Format numbers according to context and speaker intent:
      * When referring to figures, mathematical numbers, measurements, dates, times, currency, or explicit numbers ("number 1", "5 dollars", "3 o'clock", "step 2"), write them in figures (e.g., 1, 5, 3:00, Step 2).
@@ -817,8 +850,8 @@ async function transcribeAudio(buffer, mimeType) {
     formData.append('language', config.language);
   }
 
-  // Base conditioning prompt to establish punctuation, capitalization, numbers, and signs for Whisper
-  const baseWhisperPrompt = 'Hello! I am dictating clear, natural sentences with proper punctuation, periods, commas, question marks, exclamation marks, ellipses (...), brackets (like this), hyphens, and symbols like +, =, -, %, @, #. Numbers like 1, 2, 3 or one, two, three.';
+  // Base conditioning prompt to establish punctuation, capitalization, numbers, humming, singing, and signs
+  const baseWhisperPrompt = 'Transcribe exact spoken words, singing lyrics, humming (such as hmm, hmmm, mmm, hmm-mm), and vocal cadence verbatim with punctuation, numbers, and symbols.';
   const whisperPrompt = (config.customVocabulary && config.customVocabulary.trim())
     ? `${baseWhisperPrompt} Custom terms: ${config.customVocabulary.trim()}`
     : baseWhisperPrompt;
@@ -869,12 +902,53 @@ function handleOverlayError(errorMessage) {
 
 // IPC Handlers
 function setupIpcHandlers() {
+  // Accidental tap or silence cancellation
+  ipcMain.on('recording-cancelled', () => {
+    console.log('[Main]: Recording cancelled (accidental tap or silence detected). Zero paste dispatched.');
+    appState = 'idle';
+    stopKeyWatcher();
+    restoreAudio();
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.hide();
+      overlayWindow.webContents.send('reset-state');
+    }
+    updateTrayMenu();
+  });
+
   // Audio captured by overlay window
-  ipcMain.on('audio-captured', async (_event, { buffer, mimeType, wavBuffer }) => {
+  ipcMain.on('audio-captured', async (_event, { buffer, mimeType, wavBuffer, durationMs, rms }) => {
     try {
       if (!buffer || buffer.byteLength === 0) {
         restoreAudio();
         handleOverlayError('No audio captured');
+        return;
+      }
+
+      // 1. Accidental press filter (<400ms duration)
+      if (durationMs !== undefined && durationMs < 400) {
+        console.log(`[Main]: Audio duration (${durationMs}ms) too brief, skipping transcription.`);
+        appState = 'idle';
+        stopKeyWatcher();
+        restoreAudio();
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+          overlayWindow.hide();
+          overlayWindow.webContents.send('reset-state');
+        }
+        updateTrayMenu();
+        return;
+      }
+
+      // 2. Audio energy filter (RMS below human speech threshold)
+      if (rms !== undefined && rms > 0 && rms < 0.0025) {
+        console.log(`[Main]: Audio energy (${rms.toFixed(5)}) below human voice floor, skipping transcription.`);
+        appState = 'idle';
+        stopKeyWatcher();
+        restoreAudio();
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+          overlayWindow.hide();
+          overlayWindow.webContents.send('reset-state');
+        }
+        updateTrayMenu();
         return;
       }
 
@@ -903,6 +977,31 @@ function setupIpcHandlers() {
         }
       }
 
+      // 3. Silence hallucination filter (drops common Whisper hallucinations on low/silent audio)
+      const silencePatterns = [
+        /^thank\s+you(?:\s+very\s+much)?[.!]?$/i,
+        /^(?:thank\s+you|thanks)\s+for\s+watching[.!]?$/i,
+        /^subtitles?\s+by/i,
+        /^(?:please\s+)?subscribe[.!]?$/i,
+        /^like\s+and\s+subscribe[.!]?$/i,
+        /^(?:bye|goodbye)[.!]?$/i,
+        /^(?:you|so|oh|okay)[.!]?$/i
+      ];
+      const normRaw = (rawText || '').trim();
+      const isHallucination = silencePatterns.some(pat => pat.test(normRaw));
+      if (isHallucination && ((durationMs && durationMs < 1800) || (rms && rms < 0.01))) {
+        console.log(`[Main]: Dropping silence hallucination ("${rawText}") to prevent accidental paste.`);
+        appState = 'idle';
+        stopKeyWatcher();
+        restoreAudio();
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+          overlayWindow.hide();
+          overlayWindow.webContents.send('reset-state');
+        }
+        updateTrayMenu();
+        return;
+      }
+
       let transcribedText = '';
       if (rawText && rawText.trim()) {
         console.log(`Raw transcription: "${rawText}"`);
@@ -921,6 +1020,7 @@ function setupIpcHandlers() {
         if (overlayWindow && !overlayWindow.isDestroyed()) {
           overlayWindow.hide();
         }
+        updateTrayMenu();
         return;
       }
 
@@ -1109,6 +1209,34 @@ function setupIpcHandlers() {
     app.quit();
   });
 
+  // Auto-Updater: Check for Updates
+  ipcMain.handle('check-for-updates', async () => {
+    if (!app.isPackaged && process.env.LISTEN_DEV_UPDATE !== 'true') {
+      return { success: false, message: 'Auto-updates available in installed desktop application' };
+    }
+    try {
+      const result = await autoUpdater.checkForUpdates();
+      return { success: true, updateInfo: result ? result.updateInfo : null };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Auto-Updater: Restart and Install
+  ipcMain.on('restart-and-install-update', () => {
+    console.log('[AutoUpdater]: User requested restart to apply update. Closing and installing...');
+    try {
+      autoUpdater.quitAndInstall(false, true);
+    } catch (e) {
+      console.warn('Error during quitAndInstall:', e);
+    }
+  });
+
+  // App version
+  ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
+  });
+
   // Settings: Close
   ipcMain.on('close-settings', () => {
     if (settingsWindow && !settingsWindow.isDestroyed()) {
@@ -1117,10 +1245,106 @@ function setupIpcHandlers() {
   });
 }
 
+function setupAutoUpdater() {
+  if (!app.isPackaged && process.env.LISTEN_DEV_UPDATE !== 'true') {
+    console.log('[AutoUpdater]: Running in unpackaged mode; update checks active in installed desktop app.');
+    return;
+  }
+
+  try {
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+
+    autoUpdater.on('checking-for-update', () => {
+      console.log('[AutoUpdater]: Checking for updates...');
+      if (settingsWindow && !settingsWindow.isDestroyed()) {
+        settingsWindow.webContents.send('update-status', { status: 'checking' });
+      }
+    });
+
+    autoUpdater.on('update-available', (info) => {
+      console.log(`[AutoUpdater]: Update available: v${info.version}`);
+      if (settingsWindow && !settingsWindow.isDestroyed()) {
+        settingsWindow.webContents.send('update-status', { status: 'available', version: info.version });
+      }
+    });
+
+    autoUpdater.on('update-not-available', (info) => {
+      console.log('[AutoUpdater]: App is up to date.');
+      if (settingsWindow && !settingsWindow.isDestroyed()) {
+        settingsWindow.webContents.send('update-status', { status: 'up-to-date', version: info.version });
+      }
+    });
+
+    autoUpdater.on('download-progress', (progressObj) => {
+      if (settingsWindow && !settingsWindow.isDestroyed()) {
+        settingsWindow.webContents.send('update-status', {
+          status: 'downloading',
+          percent: Math.round(progressObj.percent)
+        });
+      }
+    });
+
+    autoUpdater.on('update-downloaded', (info) => {
+      console.log(`[AutoUpdater]: Update v${info.version} downloaded and ready to install.`);
+      if (settingsWindow && !settingsWindow.isDestroyed()) {
+        settingsWindow.webContents.send('update-status', {
+          status: 'ready',
+          version: info.version
+        });
+      }
+
+      // Show native desktop notification
+      try {
+        if (Notification.isSupported()) {
+          const notif = new Notification({
+            title: 'Listen Update Ready',
+            body: `Version ${info.version} has been downloaded. Click to restart and update.`,
+            icon: path.join(__dirname, 'assets', 'icon.png')
+          });
+          notif.on('click', () => {
+            if (settingsWindow && !settingsWindow.isDestroyed()) {
+              settingsWindow.show();
+              settingsWindow.focus();
+            } else {
+              openMainWindow();
+            }
+          });
+          notif.show();
+        }
+      } catch (ne) {
+        console.warn('[AutoUpdater]: Notification error:', ne);
+      }
+    });
+
+    autoUpdater.on('error', (err) => {
+      console.warn('[AutoUpdater]: Update check error:', err ? err.message : err);
+      if (settingsWindow && !settingsWindow.isDestroyed()) {
+        settingsWindow.webContents.send('update-status', { status: 'error', error: err ? err.message : 'Unknown error' });
+      }
+    });
+
+    // Check after 4 seconds on launch
+    setTimeout(() => {
+      autoUpdater.checkForUpdates().catch(e => {
+        console.log('[AutoUpdater]: Initial check notice:', e.message);
+      });
+    }, 4000);
+
+    // Periodic check every 4 hours
+    setInterval(() => {
+      autoUpdater.checkForUpdates().catch(() => {});
+    }, 4 * 60 * 60 * 1000);
+  } catch (err) {
+    console.warn('[AutoUpdater]: Init error:', err);
+  }
+}
+
 // App lifecycle
 app.whenReady().then(() => {
   setupPermissions();
   setupIpcHandlers();
+  setupAutoUpdater();
   createOverlayWindow();
   createTray();
   registerGlobalShortcut();
