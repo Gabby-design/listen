@@ -128,6 +128,30 @@ namespace ListenAudioControl {
             }
         }
 
+        static string GetSessionMediaTitle(object session) {
+            if (session == null) return "";
+            try {
+                MethodInfo getMedia = session.GetType().GetMethod("TryGetMediaPropertiesAsync");
+                if (getMedia == null) return "";
+                object op = getMedia.Invoke(session, null);
+                Type mediaPropsType = Type.GetType("Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties, Windows.Media.Control, ContentType = WindowsRuntime");
+                object media = AwaitWinRtOperation(op, mediaPropsType, 1000);
+                if (media != null) {
+                    PropertyInfo titleProp = media.GetType().GetProperty("Title");
+                    if (titleProp != null) {
+                        return (string)titleProp.GetValue(media, null) ?? "";
+                    }
+                }
+            } catch {}
+            return "";
+        }
+
+        static string GetSessionKey(object session) {
+            string appId = GetSessionAppId(session) ?? "";
+            string title = GetSessionMediaTitle(session) ?? "";
+            return appId + ":::" + title.Trim();
+        }
+
         static bool PauseGsmtcSession(object session) {
             try {
                 MethodInfo tryPause = session.GetType().GetMethod("TryPauseAsync");
@@ -208,28 +232,28 @@ namespace ListenAudioControl {
             // 1. Check Windows GSMTC for any actively playing media session (status == 4 / Playing)
             object mgr = GetGsmtcManager();
             var sessions = GetGsmtcSessions(mgr);
-            List<string> pausedApps = new List<string>();
+            List<string> pausedSessions = new List<string>();
 
             if (sessions != null) {
                 foreach (var s in sessions) {
                     int status = GetSessionPlaybackStatus(s);
                     // 4 = Playing
                     if (status == 4) {
-                        string appId = GetSessionAppId(s);
+                        string key = GetSessionKey(s);
                         bool ok = PauseGsmtcSession(s);
-                        if (ok && !string.IsNullOrEmpty(appId)) {
-                            pausedApps.Add(appId);
+                        if (ok && !string.IsNullOrEmpty(key)) {
+                            pausedSessions.Add(key);
                         }
                     }
                 }
             }
 
-            if (pausedApps.Count > 0) {
-                // Record paused sessions to state file for reliable resume
+            if (pausedSessions.Count > 0) {
+                // Record paused sessions with specific key to state file for reliable resume
                 try {
                     List<string> lines = new List<string>();
-                    foreach (var a in pausedApps) {
-                        lines.Add("GSMTC:" + a);
+                    foreach (var k in pausedSessions) {
+                        lines.Add("GSMTC:" + k);
                     }
                     File.WriteAllLines(StateFilePath, lines.ToArray());
                 } catch {}
@@ -285,13 +309,13 @@ namespace ListenAudioControl {
             }
 
             bool didResume = false;
-            List<string> gsmtcAppsToResume = new List<string>();
+            List<string> gsmtcKeysToResume = new List<string>();
 
             foreach (var line in lines) {
                 if (line.StartsWith("GSMTC:")) {
-                    string appId = line.Substring(6).Trim();
-                    if (!string.IsNullOrEmpty(appId)) {
-                        gsmtcAppsToResume.Add(appId);
+                    string key = line.Substring(6).Trim();
+                    if (!string.IsNullOrEmpty(key)) {
+                        gsmtcKeysToResume.Add(key);
                     }
                 } else if (line.StartsWith("DUCK:")) {
                     string valStr = line.Substring(5).Trim();
@@ -307,13 +331,13 @@ namespace ListenAudioControl {
                 }
             }
 
-            if (gsmtcAppsToResume.Count > 0) {
+            if (gsmtcKeysToResume.Count > 0) {
                 object mgr = GetGsmtcManager();
                 var sessions = GetGsmtcSessions(mgr);
                 if (sessions != null) {
                     foreach (var s in sessions) {
-                        string appId = GetSessionAppId(s);
-                        if (!string.IsNullOrEmpty(appId) && gsmtcAppsToResume.Contains(appId)) {
+                        string key = GetSessionKey(s);
+                        if (!string.IsNullOrEmpty(key) && gsmtcKeysToResume.Contains(key)) {
                             int status = GetSessionPlaybackStatus(s);
                             // 5 = Paused
                             if (status == 5) {
